@@ -1,4 +1,4 @@
-{
+ter{
   "name": "WF1 New — Signal Collector (Daily 7am)",
   "nodes": [
     {
@@ -437,7 +437,7 @@
             },
             {
               "name": "api_key",
-              "value": "f970fdb495fd1460609c1ce9d9d7bc0bff13f3c2fdd14538274b0b13e18adfa5"
+              "value": "EnterAPIKEY"
             }
           ]
         },
