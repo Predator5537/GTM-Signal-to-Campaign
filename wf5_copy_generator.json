@@ -1,0 +1,574 @@
+{
+  "name": "WF5 — Email Copy Generator (Triggered by WF4)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-email-copy",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "3c291951-075e-4089-adec-c89deca2031d",
+      "name": "Webhook — Generate Email",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "045b9331-f63f-426d-8b99-81e8b9d2bd15",
+      "notes": "After importing, copy this webhook URL and paste it into WF4 node 'HTTP — Trigger WF5 Copy Generator' replacing REPLACE_WITH_WF5_WEBHOOK_URL"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "OK",
+        "options": {}
+      },
+      "id": "92148806-2b76-4c97-b626-abf048b3e949",
+      "name": "Respond to WF4",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sanitize all text fields from the webhook body AND validate required fields.\n//\n// SANITIZATION: signal_summaries (and other fields) can contain double quotes\n// from G2 reviews, em-dashes from earnings statements, and newlines — all of\n// which corrupt the JSON body string in the OpenRouter HTTP node when interpolated\n// directly via n8n expressions. Strategy: replace double quotes with single quotes\n// (semantically safe for AI prompts), collapse newlines, trim whitespace.\n//\n// VALIDATION: Email generation is blocked entirely if any of these are missing:\n//   Company Name, Buyer Name, Buyer Title, Buyer Email, Tier\n// Tier must also be 'Tier 1' or 'Tier 2' — Tier 3 and Discard are not emailed.\n// A row that fails validation returns __skip: true so the downstream IF node\n// routes it to the 'Mark Missing Buyer Data' Sheets node instead of OpenRouter.\n// This prevents 'Hi ,' emails and ensures every sent email is fully personalized.\n\nconst body = $input.first().json.body;\n\nfunction sanitize(val) {\n  if (val === null || val === undefined) return '';\n  return String(val)\n    .replace(/\"/g, \"'\")\n    .replace(/\\r?\\n/g, ' ')\n    .trim();\n}\n\nconst cleaned = {\n  buyer_name:       sanitize(body.buyer_name),\n  buyer_title:      sanitize(body.buyer_title),\n  company_name:     sanitize(body.company_name),\n  company_domain:   sanitize(body.company_domain),\n  buyer_email:      sanitize(body.buyer_email),\n  funding_stage:    sanitize(body.funding_stage),\n  employee_count:   body.employee_count ?? '',\n  estimated_arr:    sanitize(body.estimated_arr),\n  cs_headcount:     body.cs_headcount ?? '',\n  tech_stack:       sanitize(body.tech_stack),\n  total_score:      body.total_score ?? 0,\n  tier:             sanitize(body.tier),\n  signal_types:     sanitize(body.signal_types),\n  signal_summaries: sanitize(body.signal_summaries)\n};\n\n// Validate all five required fields\nconst required = {\n  'Company Name': cleaned.company_name,\n  'Buyer Name':   cleaned.buyer_name,\n  'Buyer Title':  cleaned.buyer_title,\n  'Buyer Email':  cleaned.buyer_email,\n  'Tier':         cleaned.tier\n};\n\nconst missing = Object.entries(required)\n  .filter(([_, v]) => !v)\n  .map(([k]) => k);\n\nconst validTier = ['Tier 1', 'Tier 2'].includes(cleaned.tier);\n\nif (missing.length > 0 || !validTier) {\n  const reason = missing.length > 0\n    ? `Missing required fields: ${missing.join(', ')}`\n    : `Tier '${cleaned.tier}' is not eligible (must be Tier 1 or Tier 2)`;\n  return [{\n    json: {\n      __skip: true,\n      company_domain: cleaned.company_domain,\n      reason\n    }\n  }];\n}\n\nreturn [{ json: cleaned }];"
+      },
+      "id": "c611db6e-38cc-4caa-bff1-bae326f3e8f3",
+      "name": "Code — Sanitize + Validate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "skip-check",
+              "leftValue": "={{ $json.__skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          }
+        },
+        "options": {}
+      },
+      "id": "b5ffadcd-a3bb-4a11-b88a-b2724b1bd142",
+      "name": "IF — Required Fields Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "notes": "TRUE = all 5 required fields present and tier is Tier 1 or Tier 2 → generate email. FALSE = data incomplete or ineligible tier → update Scored Accounts to 'Missing Buyer Data' and stop."
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Scored Accounts",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Company Domain"
+          ],
+          "schema": [
+            {
+              "id": "Company Domain",
+              "displayName": "Company Domain",
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "value": {
+            "Company Domain": "={{ $json.company_domain }}",
+            "Status": "=Missing Buyer Data"
+          }
+        },
+        "options": {}
+      },
+      "id": "89f5583e-dc5d-4322-b5db-f13998a474c5",
+      "name": "Sheets — Mark Missing Buyer Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        720,
+        208
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "mCitxoRY2r1cdcjh",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "notes": "Runs only when validation fails (missing buyer fields or ineligible tier). Sets Status to 'Missing Buyer Data' so the account is visible and recoverable — operator can manually add buyer data and reset status to Enriched to retry."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openRouterApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"moonshotai/kimi-k2-0905\",\n  \"temperature\": 0.5,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"[CONTEXT]\\nYou are a B2B outbound sales copywriter writing a first-touch plain-text email for QuadSci, a churn prediction platform. The email must feel personal, credible, and grounded in the specific account signals supplied. Use only the provided inputs. Do not invent facts, customers, headcount, ARR, account counts, deal sizes, or proof points beyond the QuadSci facts listed below.\\n\\n[QUADSCI FACTS — use only these, invent nothing else]\\n- Predicts customer churn 12 months before renewal with 94% accuracy.\\n- Ingests raw product telemetry, not CRM data.\\n- Self-hosted: customer data never leaves the buyer environment.\\n- Reference customer Clari: 6 billion telemetry signals processed, 80 percent of contractions spotted 6 months ahead.\\n\\n[OBJECTIVE]\\n1. A subject line of 4 to 7 words.\\n2. A plain-text email body of 80 to 120 words (body only, excluding subject and greeting).\\n\\nThe email must:\\n- open with the strongest fired signal from signal_summaries, named by source (the G2 review, the earnings call, the job posting, the LinkedIn post, the leadership hire),\\n- connect that signal to a QuadSci outcome relevant to the persona,\\n- end with one soft CTA: a 20-minute call,\\n- read peer-to-peer, not vendor-to-prospect.\\n\\n[PERSONA GUIDANCE — match to buyer_title]\\nIf buyer_title contains 'CRO', 'Chief Revenue', 'VP Revenue', or 'Head of Revenue', emphasize: forecast accuracy you can defend to the board; NRR as a predictable metric; preempting expansion gaps before they hit the number.\\n\\nIf buyer_title contains 'CS', 'Customer Success', or 'Chief Customer', emphasize: giving CSMs runway to act rather than react; removing surprise churn from QBRs; shifting CSM work from triage to expansion.\\n\\nIf buyer_title contains 'RevOps', 'Revenue Operations', or 'CS Operations', emphasize: telemetry as a first-class data source (not stitched from CRM); reducing scoring fragility tied to CRM hygiene; cutting manual analyst passes per quarter.\\n\\nDefault if none match: CS leadership framing.\\n\\n[HARD RULES]\\n- Greeting must be exactly 'Hi <first_name>,' where <first_name> is the first word of buyer_name.\\n- Mention company_name naturally in sentence 1 or 2.\\n- Reference one specific signal from signal_summaries by source in paragraph 1.\\n- Close with this exact sentence: 'Surprise churn is a visibility problem, not a CSM skill problem. Open to 20 minutes this week?'\\n- Tone: professional, specific, restrained, direct. Peer-to-peer.\\n\\n[STRICT PROHIBITIONS]\\n- NO em-dash characters. Do not use this character: —. Replace with commas, periods, parentheses, or regular hyphens (-).\\n- NO exclamation points.\\n- NO emojis, slang, hype, or buzzwords.\\n- NO phrases: 'I hope this finds you well', 'just checking in', 'circling back', 'touching base', 'wanted to reach out', 'quick question', 'noticed that', 'caught my eye'.\\n- NO words: 'game-changer', 'revolutionize', 'next-level', 'unlock', 'supercharge', 'leverage', 'synergy', 'seamless'.\\n- NO invented numbers. Do not state employee count, ARR, CS team size, account count, or any other figure unless it is in the inputs. Do not infer or estimate.\\n- NO invented customer quotes or paraphrased reviews not present in signal_summaries.\\n- NO bullet points, markdown, links, headers, or placeholders.\\n- If an input is empty, write around it. Do not output empty brackets, hyphens, or 'N/A'.\\n- NO repeating the same sentence pattern twice in a row.\\n\\n[SUBJECT RULES]\\n- 4 to 7 words.\\n- Specific to the signal type or the renewal-visibility gap.\\n- Good patterns: 'When Gainsight catches it too late', 'Six months earlier than Clari', 'The renewal you did not see', 'Telemetry your CRM cannot see'.\\n- Avoid: 'Quick question', 'Following up', 'Introducing QuadSci', 'Hiring at <company>'.\\n\\n[BODY STRUCTURE]\\nParagraph 1 (2 to 3 sentences): open with the specific signal, named by source. State why that signal matters to this persona in their own framing.\\nParagraph 2 (2 to 3 sentences): bridge to QuadSci's mechanism (raw telemetry, 12-month lead, self-hosted). Use the Clari proof point only if it lands naturally; do not force it.\\nParagraph 3 (1 sentence): the exact closing line from HARD RULES. No deviation.\\n\\n[STYLE CONSTRAINTS]\\n- Plain text only.\\n- Body length 80 to 120 words.\\n- Sentence length varies. No two consecutive sentences with the same structure.\\n- Contractions allowed ('you're', 'it's', 'don't').\\n- No sign-off, no name, no signature block. The Gmail send layer handles that.\\n\\n[OUTPUT FORMAT — return exactly this and nothing else]\\nSubject: <subject line>\\n\\nHi <first_name>,\\n\\n<paragraph 1>\\n\\n<paragraph 2>\\n\\nSurprise churn is a visibility problem, not a CSM skill problem. Open to 20 minutes this week?\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Write the email now using these inputs. Extract first_name as the first whitespace-separated word of buyer_name.\\n\\nbuyer_name: {{ $json.buyer_name }}\\nbuyer_title: {{ $json.buyer_title }}\\ncompany_name: {{ $json.company_name }}\\nfunding_stage: {{ $json.funding_stage }}\\nemployee_count: {{ $json.employee_count }}\\nestimated_arr: {{ $json.estimated_arr }}\\ncs_headcount: {{ $json.cs_headcount }}\\ntech_stack: {{ $json.tech_stack }}\\ntotal_score: {{ $json.total_score }}\\ntier: {{ $json.tier }}\\nsignal_types: {{ $json.signal_types }}\\nsignal_summaries: {{ $json.signal_summaries }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "03b185a7-458a-4992-bb66-a4ef70686538",
+      "name": "OpenRouter — Write Email Copy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uM6SVfqA6c18NyzX",
+          "name": "OpenRouter QuadSci"
+        },
+        "openRouterApi": {
+          "id": "sU3T9CpIOkDnxbSj",
+          "name": "OpenRouter API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract the generated email text from OpenRouter response\n// and combine with account data for writing to Review Queue.\n//\n// Account data is read from the Webhook node (original, pre-sanitization) so\n// fields like buyer_email are preserved exactly as received from WF4.\n//\n// total_score uses ?? (nullish coalescing) instead of || so that a score of 0\n// is written as 0, not as an empty string. The || operator treats 0 as falsy.\n\nconst response    = $input.first().json;\nconst emailText   = response?.choices?.[0]?.message?.content || 'EMAIL GENERATION FAILED — check OpenRouter';\nconst accountData = $('Webhook — Generate Email').first().json.body;\n\nreturn [{\n  json: {\n    'Date Added':      new Date().toISOString().split('T')[0],\n    'Company Domain':  accountData.company_domain  || '',\n    'Company Name':    accountData.company_name   || '',\n    'Buyer Name':      accountData.buyer_name     || '',\n    'Buyer Title':     accountData.buyer_title    || '',\n    'Buyer Email':     accountData.buyer_email    || '',\n    'Tier':            accountData.tier           || '',\n    'Total Score':     accountData.total_score    ?? '',\n    'Signal Summary':  accountData.signal_summaries || '',\n    'Generated Email': emailText.trim(),\n    'Your Action':     '',\n    'Your Notes':      '',\n    'Send Date':       '',\n    'Reply Date':      '',\n    'Outcome':         ''\n  }\n}];"
+      },
+      "id": "ea839312-53d4-458e-aa01-53689baa2784",
+      "name": "Code — Assemble Review Queue Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Review Queue",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "Date Added",
+              "displayName": "Date Added",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Buyer Name",
+              "displayName": "Buyer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Buyer Title",
+              "displayName": "Buyer Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Buyer Email",
+              "displayName": "Buyer Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tier",
+              "displayName": "Tier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total Score",
+              "displayName": "Total Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Signal Summary",
+              "displayName": "Signal Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Generated Email",
+              "displayName": "Generated Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Your Action",
+              "displayName": "Your Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Your Notes",
+              "displayName": "Your Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Send Date",
+              "displayName": "Send Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reply Date",
+              "displayName": "Reply Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Outcome",
+              "displayName": "Outcome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "threadId",
+              "displayName": "threadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "labelIds",
+              "displayName": "labelIds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company Domain",
+              "displayName": "Company Domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "f50ed02c-2158-456e-a305-6e630475b334",
+      "name": "Sheets — Write to Review Queue",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        1200,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "mCitxoRY2r1cdcjh",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Scored Accounts",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Company Domain"
+          ],
+          "schema": [
+            {
+              "id": "Company Domain",
+              "displayName": "Company Domain",
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "value": {
+            "Company Domain": "={{ $('Code — Assemble Review Queue Row').first().json['Company Domain'] }}",
+            "Status": "=In Review Queue"
+          }
+        },
+        "options": {}
+      },
+      "id": "ec54cff1-e966-4984-bbcc-e2e314e0f79f",
+      "name": "Sheets — Update Status to In Review Queue",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        1440,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "mCitxoRY2r1cdcjh",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook — Generate Email": {
+      "main": [
+        [
+          {
+            "node": "Respond to WF4",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code — Sanitize + Validate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Sanitize + Validate": {
+      "main": [
+        [
+          {
+            "node": "IF — Required Fields Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Required Fields Valid?": {
+      "main": [
+        [
+          {
+            "node": "OpenRouter — Write Email Copy",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sheets — Mark Missing Buyer Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter — Write Email Copy": {
+      "main": [
+        [
+          {
+            "node": "Code — Assemble Review Queue Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Assemble Review Queue Row": {
+      "main": [
+        [
+          {
+            "node": "Sheets — Write to Review Queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets — Write to Review Queue": {
+      "main": [
+        [
+          {
+            "node": "Sheets — Update Status to In Review Queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "03d1d205-2d63-4be4-9520-563ebabd3813",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2937f53cf7d4f752601b86a3c3b2ce9edd949a058b20d977b6b8328c69cff778"
+  },
+  "id": "DoXuFfjlTgwnxAjl",
+  "tags": [
+    {
+      "updatedAt": "2026-05-25T23:16:57.705Z",
+      "createdAt": "2026-05-25T23:16:57.705Z",
+      "id": "lRKTKUtOG1wLcOi4",
+      "name": "quadsci"
+    }
+  ]
+}

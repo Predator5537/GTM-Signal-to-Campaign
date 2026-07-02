@@ -1,0 +1,500 @@
+{
+  "name": "WF4 — AI Scorer (Poll-Based, Every 15 Min)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "wf4-node-01",
+      "name": "Schedule Trigger — Every 15 Min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ],
+      "notes": "Replaces the Clay webhook trigger. Polls Scored Accounts for Status=Enriched rows. Safe for localhost — no inbound network requirement. Clay no longer needs to reach n8n."
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "getRows",
+        "documentId": {
+          "__rl": true,
+          "value": "1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Scored Accounts",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "Enriched"
+            }
+          ]
+        },
+        "options": {
+          "limit": 1
+        }
+      },
+      "id": "wf4-node-02",
+      "name": "Sheets — Get Enriched Accounts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        240,
+        300
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RECONNECT_CREDENTIAL",
+          "name": "Google Sheets - QuadSci"
+        }
+      },
+      "notes": "Filter: Status = Enriched. Only rows where Clay has completed enrichment and written back buyer fields + Status. If no rows match, returns one empty item — the IF guard below stops execution cleanly."
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "getRows",
+        "documentId": {
+          "__rl": true,
+          "value": "1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Buyer Contacts",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "wf4-node-02b",
+      "name": "Sheets — Get Buyer Contacts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        240,
+        480
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RECONNECT_CREDENTIAL",
+          "name": "Google Sheets - QuadSci"
+        }
+      },
+      "notes": "Reads Clay-enriched buyer contacts from the separate Buyer Contacts tab. Clay cannot write back to its source sheet, so Find Person results are exported to this tab. Joined with Scored Accounts on Company Domain in the merge node below."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge Buyer Contacts into Scored Accounts rows, joined on Company Domain.\n//\n// Clay cannot write enrichment results back to its source Google Sheet.\n// Workaround: Clay exports Find Person results to a separate 'Buyer Contacts' tab.\n// This node joins them here in n8n before the rest of WF4 runs.\n//\n// Domain normalization strips protocol, www prefix, and path/query suffixes so\n// that 'https://gong.io/', 'www.gong.io', and 'gong.io' all match each other.\n// Without this, Clay-enriched contacts with slightly different domain formats\n// silently fail to join and buyer fields remain empty downstream.\n\nfunction normalizeDomain(d) {\n  if (!d) return '';\n  return String(d).trim().toLowerCase()\n    .replace(/^https?:\\/\\//, '')\n    .replace(/^www\\./, '')\n    .replace(/[/?#].*$/, '');\n}\n\nconst accounts = $('Sheets — Get Enriched Accounts').all();\nconst contacts = $('Sheets — Get Buyer Contacts').all();\n\n// Build a lookup map: normalized domain → first matching contact\nconst contactMap = {};\nfor (const c of contacts) {\n  const domain = normalizeDomain(c.json['Company Domain']);\n  if (domain && !contactMap[domain]) contactMap[domain] = c.json;\n}\n\n// Merge contact fields into each account row\nconst merged = accounts.map(a => {\n  const domain  = normalizeDomain(a.json['Company Domain']);\n  const contact = contactMap[domain] || {};\n  return {\n    json: {\n      ...a.json,\n      'Buyer Name':  a.json['Buyer Name']  || contact['Buyer Name']  || '',\n      'Buyer Title': a.json['Buyer Title'] || contact['Buyer Title'] || '',\n      'Buyer Email': a.json['Buyer Email'] || contact['Buyer Email'] || ''\n    }\n  };\n});\n\nreturn merged;"
+      },
+      "id": "wf4-node-02c",
+      "name": "Code — Merge Buyer Contacts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        360,
+        300
+      ],
+      "notes": "Joins Scored Accounts + Buyer Contacts on Company Domain. Prefers values already in the account row (manual overrides), falls back to Clay-enriched contact fields. Output feeds the IF guard as if buyer fields were always on the account row."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "has-rows",
+              "leftValue": "={{ $json['Company Domain'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "wf4-node-03",
+      "name": "IF — Has Enriched Accounts?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        600,
+        300
+      ],
+      "notes": "Guard against empty Sheets reads. Uses 'notEmpty' operator — no rightValue needed, no placeholder shown in UI. Stops execution when Sheets returns an empty item (no Status=Enriched rows). LIMIT 1 on the Sheets read above ensures exactly one account per execution — prevents batch corruption where multiple accounts get marked Scoring In Progress but only one gets scored."
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Scored Accounts",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Company Domain"
+          ],
+          "value": {
+            "Company Domain": "={{ $json['Company Domain'] }}",
+            "Status": "=Scoring In Progress"
+          }
+        },
+        "options": {}
+      },
+      "id": "wf4-node-04",
+      "name": "Sheets — Mark Scoring In Progress",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        720,
+        200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RECONNECT_CREDENTIAL",
+          "name": "Google Sheets - QuadSci"
+        }
+      },
+      "notes": "Idempotency guard: mark row as in-progress BEFORE calling OpenRouter. If WF4 crashes mid-execution, the row stays as 'Scoring In Progress' and is NOT re-picked up on the next poll. Manual recovery: reset Status to 'Enriched' in the sheet."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "function normalizeDomain(d) {\n  if (!d) return '';\n  return String(d).trim().toLowerCase()\n    .replace(/^https?:\\/\\//, '')\n    .replace(/^www\\./, '')\n    .replace(/[/?#].*$/, '');\n}\n\nfunction sanitize(val) {\n  if (val === null || val === undefined) return '';\n  return String(val)\n    .replace(/\\\"/g, \"'\")\n    .replace(/\\r?\\n/g, ' ')\n    .trim();\n}\n\nconst current = $input.item.json;\nconst domain = normalizeDomain(current['Company Domain'] || current.company_domain || '');\n\nconst allAccounts = $('Code — Merge Buyer Contacts').all();\nconst account = allAccounts.find(\n  a => normalizeDomain(a.json['Company Domain']) === domain\n)?.json || {};\n\nreturn {\n  json: {\n    'Company Name':     sanitize(account['Company Name']),\n    'Company Domain':   account['Company Domain'] || current['Company Domain'] || '',\n    'Employee Count':   account['Employee Count'] || '',\n    'Funding Stage':    sanitize(account['Funding Stage']),\n    'Estimated ARR':    sanitize(account['Estimated ARR']),\n    'CS Headcount':     account['CS Headcount'] || '',\n    'Tech Stack':       sanitize(account['Tech Stack']),\n    'Signal Types':     sanitize(account['Signal Types']),\n    'Signal Summaries': sanitize(account['Signal Summaries']),\n    'Buyer Name':       sanitize(account['Buyer Name']),\n    'Buyer Title':      sanitize(account['Buyer Title']),\n    'Buyer Email':      account['Buyer Email'] || ''\n  }\n};"
+      },
+      "id": "wf4-node-11",
+      "name": "Code — Sanitize Account for Scoring",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        840,
+        200
+      ],
+      "notes": "Sanitizes text fields before JSON interpolation in the OpenRouter scoring node. Rebuilds the full merged account row by domain after the Scoring In Progress writeback step, then sanitizes the recovered fields before scoring."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"moonshotai/kimi-k2-0905\",\n  \"response_format\": { \"type\": \"json_object\" },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a GTM scoring engine. Score the account using the rubric provided. Return ONLY a valid JSON object with these exact fields: firmographic_score (integer 0-40), signal_score (integer 0-45), tech_score (integer 0-15), total_score (integer 0-100), tier (exactly one of: Tier 1, Tier 2, Tier 3, Discard), reasoning (one sentence max 20 words). Do not include any text outside the JSON object.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Score this account:\\n\\nCompany: {{ $json['Company Name'] }}\\nDomain: {{ $json['Company Domain'] }}\\nEmployees: {{ $json['Employee Count'] }}\\nFunding Stage: {{ $json['Funding Stage'] }}\\nEstimated ARR: {{ $json['Estimated ARR'] }}\\nCS Headcount: {{ $json['CS Headcount'] }}\\nTech Stack: {{ $json['Tech Stack'] }}\\nSignals fired: {{ $json['Signal Types'] }}\\nSignal summaries: {{ $json['Signal Summaries'] }}\\n\\nSCORING RUBRIC:\\n\\nFIRMOGRAPHIC FIT (max 40 pts):\\n- Employees 500+: 20pts | 200-499: 15pts | 100-199: 8pts | under 100: 0pts\\n- Series C or later: 15pts | Series B: 10pts | Series A or earlier: 0pts\\n- ARR $100M+: 15pts | $50-100M: 8pts | under $50M: 0pts\\n- CS team 10+: 10pts | 5-9: 5pts | under 5: 0pts\\n\\nSIGNAL STRENGTH (max 45 pts):\\n- Public earnings or investor statement mentioning churn: 20pts\\n- G2 review mentioning forecast or surprise churn: 15pts\\n- CRO or VP CS LinkedIn post about NRR pain: 15pts\\n- Director or above CS or RevOps hire announced: 10pts\\n- Job posting for CS platform migration or Gainsight or ChurnZero: 10pts\\n- Each additional signal beyond the first 3: +5pts each\\n\\nTECH STACK FIT (max 15 pts):\\n- Uses Gainsight or ChurnZero: 10pts\\n- Uses Segment, Amplitude, Mixpanel, or Heap: 5pts\\n- Uses Salesforce: 5pts\\n\\nTIER ASSIGNMENT:\\n- Tier 1: total 80 or above\\n- Tier 2: total 60-79\\n- Tier 3: total 40-59\\n- Discard: total below 40\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "wf4-node-05",
+      "name": "OpenRouter — Score Account",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "RECONNECT_CREDENTIAL",
+          "name": "OpenRouter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Parse OpenRouter JSON response and carry forward the full account row.\n//\n// Why domain-match lookup instead of $input:\n// - $input at this point is the OpenRouter HTTP response.\n// - The full account row (with merged buyer fields) lives at\n//   'Code — Merge Buyer Contacts'. We reach it by node name.\n// - When multiple enriched accounts are in the same execution batch,\n//   we match by the domain that was marked 'Scoring In Progress'.\n\nconst response = $input.item.json;\nconst raw = response?.choices?.[0]?.message?.content || '{}';\n\nlet scores;\ntry {\n  scores = typeof raw === 'string' ? JSON.parse(raw) : raw;\n} catch (e) {\n  scores = {\n    firmographic_score: 0,\n    signal_score: 0,\n    tech_score: 0,\n    total_score: 0,\n    tier: 'Discard',\n    reasoning: 'Parse error — check OpenRouter response format'\n  };\n}\n\nconst domain = $('Sheets — Mark Scoring In Progress').item.json['Company Domain'];\nconst allAccounts = $('Code — Merge Buyer Contacts').all();\nconst account = allAccounts.find(\n  a => String(a.json['Company Domain']).trim().toLowerCase()\n       === String(domain).trim().toLowerCase()\n)?.json || {};\n\nreturn {\n  json: {\n    company_domain:     account['Company Domain'] || domain,\n    company_name:       account['Company Name'] || '',\n    employee_count:     account['Employee Count'] || '',\n    funding_stage:      account['Funding Stage'] || '',\n    estimated_arr:      account['Estimated ARR'] || '',\n    tech_stack:         account['Tech Stack'] || '',\n    cs_headcount:       account['CS Headcount'] || '',\n    signal_types:       account['Signal Types'] || '',\n    signal_summaries:   account['Signal Summaries'] || '',\n    buyer_name:         account['Buyer Name'] || '',\n    buyer_title:        account['Buyer Title'] || '',\n    buyer_email:        account['Buyer Email'] || '',\n    firmographic_score: scores.firmographic_score ?? 0,\n    signal_score:       scores.signal_score ?? 0,\n    tech_score:         scores.tech_score ?? 0,\n    total_score:        scores.total_score ?? 0,\n    tier:               scores.tier || 'Discard',\n    reasoning:          scores.reasoning || ''\n  }\n};"
+      },
+      "id": "wf4-node-06",
+      "name": "Code — Parse Score Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Scored Accounts",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Company Domain"
+          ],
+          "value": {
+            "Company Domain": "={{ $json.company_domain }}",
+            "Firmographic Score": "={{ $json.firmographic_score }}",
+            "Signal Score": "={{ $json.signal_score }}",
+            "Tech Score": "={{ $json.tech_score }}",
+            "Total Score": "={{ $json.total_score }}",
+            "Tier": "={{ $json.tier }}",
+            "Status": "=Scored"
+          }
+        },
+        "options": {}
+      },
+      "id": "wf4-node-07",
+      "name": "Sheets — Write Score + Tier",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        1440,
+        200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "RECONNECT_CREDENTIAL",
+          "name": "Google Sheets - QuadSci"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "tier-check",
+              "leftValue": "={{ $json.tier }}",
+              "rightValue": "Tier 3",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "discard-check",
+              "leftValue": "={{ $json.tier }}",
+              "rightValue": "Discard",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "wf4-node-08",
+      "name": "IF — Tier 1 or Tier 2?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function normalizeDomain(d) {\n  if (!d) return '';\n  return String(d).trim().toLowerCase()\n    .replace(/^https?:\\/\\//, '')\n    .replace(/^www\\./, '')\n    .replace(/[/?#].*$/, '');\n}\n\nconst current = $input.first().json;\nconst domain = normalizeDomain(\n  current.company_domain || current['Company Domain'] || ''\n);\n\nconst parsedItems = $('Code — Parse Score Result').all();\nconst scored = parsedItems.find(\n  i => normalizeDomain(i.json.company_domain || i.json['Company Domain']) === domain\n)?.json || current;\n\nconst allContacts = $('Sheets — Get Buyer Contacts').all();\nconst matching = allContacts.filter(c =>\n  normalizeDomain(c.json['Company Domain']) === domain\n);\n\nif (matching.length === 0) {\n  return [{ json: { ...scored } }];\n}\n\nreturn matching.map(c => ({\n  json: {\n    ...scored,\n    buyer_name:  c.json['Buyer Name']  || scored.buyer_name  || '',\n    buyer_title: c.json['Buyer Title'] || scored.buyer_title || '',\n    buyer_email: c.json['Buyer Email'] || scored.buyer_email || ''\n  }\n}));"
+      },
+      "id": "wf4-node-10",
+      "name": "Code — Split Per Contact",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        100
+      ],
+      "notes": "Fan-out node: rebuilds the full scored object by domain from Code — Parse Score Result, then emits one item per matching buyer contact from Buyer Contacts."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5678/webhook/generate-email-copy",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "wf4-node-09",
+      "name": "HTTP — Trigger WF5 Copy Generator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2160,
+        100
+      ],
+      "notes": "Fires once per item from Code — Split Per Contact. Uses $json (current per-contact item) — NOT a named node reference — so each call carries the correct buyer_name/title/email for that specific contact. WF5 must be ACTIVE before WF4 runs."
+    }
+  ],
+  "connections": {
+    "Schedule Trigger — Every 15 Min": {
+      "main": [
+        [
+          {
+            "node": "Sheets — Get Enriched Accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets — Get Enriched Accounts": {
+      "main": [
+        [
+          {
+            "node": "Sheets — Get Buyer Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets — Get Buyer Contacts": {
+      "main": [
+        [
+          {
+            "node": "Code — Merge Buyer Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Merge Buyer Contacts": {
+      "main": [
+        [
+          {
+            "node": "IF — Has Enriched Accounts?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Has Enriched Accounts?": {
+      "main": [
+        [
+          {
+            "node": "Sheets — Mark Scoring In Progress",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Sheets — Mark Scoring In Progress": {
+      "main": [
+        [
+          {
+            "node": "Code — Sanitize Account for Scoring",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Sanitize Account for Scoring": {
+      "main": [
+        [
+          {
+            "node": "OpenRouter — Score Account",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter — Score Account": {
+      "main": [
+        [
+          {
+            "node": "Code — Parse Score Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Parse Score Result": {
+      "main": [
+        [
+          {
+            "node": "Sheets — Write Score + Tier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets — Write Score + Tier": {
+      "main": [
+        [
+          {
+            "node": "IF — Tier 1 or Tier 2?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Tier 1 or Tier 2?": {
+      "main": [
+        [
+          {
+            "node": "Code — Split Per Contact",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Code — Split Per Contact": {
+      "main": [
+        [
+          {
+            "node": "HTTP — Trigger WF5 Copy Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "instanceId": ""
+  },
+  "tags": [
+    {
+      "name": "quadsci"
+    }
+  ]
+}

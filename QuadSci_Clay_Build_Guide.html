@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>QuadSci Clay Table — Build Guide</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: #1a1a1a; background: #fafaf9; margin: 0; padding: 0;
+    line-height: 1.55; font-size: 15px;
+  }
+  .container { max-width: 1020px; margin: 0 auto; padding: 40px 48px 80px; background: #fff; box-shadow: 0 0 40px rgba(0,0,0,0.04); }
+  header { border-bottom: 4px solid #6B46C1; padding-bottom: 24px; margin-bottom: 36px; }
+  h1 { font-size: 28px; font-weight: 800; margin: 0 0 6px; color: #1a1a1a; }
+  h2 { font-size: 20px; font-weight: 700; margin: 48px 0 16px; color: #4c1d95; padding-bottom: 8px; border-bottom: 2px solid #e5e5e5; }
+  h3 { font-size: 15px; font-weight: 700; margin: 0 0 10px; color: #2d2d2d; }
+  p { margin: 0 0 12px; }
+  ul { margin: 0 0 12px; padding-left: 22px; }
+  li { margin-bottom: 5px; }
+  code { background: #f3f0fa; color: #5b21b6; padding: 2px 6px; border-radius: 3px; font-size: 12px; font-family: "SF Mono", Menlo, Consolas, monospace; }
+  pre { background: #1f1b2e; color: #e2dcf5; padding: 16px 20px; border-radius: 6px; overflow-x: auto; font-size: 12px; line-height: 1.6; font-family: "SF Mono", Menlo, Consolas, monospace; white-space: pre-wrap; margin: 12px 0 18px; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 20px; font-size: 13px; }
+  th { background: #f3f0fa; color: #4c1d95; text-align: left; padding: 9px 12px; font-weight: 600; border-bottom: 2px solid #c4b5fd; }
+  td { padding: 9px 12px; border-bottom: 1px solid #ece9f5; vertical-align: top; }
+  .col-card { border: 1px solid #e5e5e5; border-radius: 8px; margin: 18px 0; overflow: hidden; }
+  .col-header { padding: 10px 18px; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 12px; }
+  .col-body { padding: 16px 20px; border-top: 1px solid #e5e5e5; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+  .badge.source     { background: #dbeafe; color: #1e40af; }
+  .badge.formula    { background: #dcfce7; color: #166534; }
+  .badge.enrich     { background: #fef3c7; color: #92400e; }
+  .badge.ai         { background: #ede9fe; color: #5b21b6; }
+  .badge.manual     { background: #f3f4f6; color: #374151; }
+  .badge.automated  { background: #d1fae5; color: #047857; }
+  .callout { background: #f3f0fa; border-left: 4px solid #6B46C1; padding: 14px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+  .callout.warn { background: #fef3c7; border-color: #d97706; }
+  .callout.ok   { background: #d1fae5; border-color: #059669; }
+  .num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: #6B46C1; color: #fff; border-radius: 50%; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .phase-header { background: #4c1d95; color: #fff; padding: 10px 20px; font-weight: 700; font-size: 13px; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 6px 6px 0 0; }
+  .section-box { border: 1px solid #e5e5e5; border-radius: 8px; margin: 24px 0; overflow: hidden; }
+  .section-box .col-body { border-top: none; }
+  .step-grid { display: grid; grid-template-columns: 28px 1fr; gap: 8px 14px; align-items: start; margin: 10px 0; }
+  .meta { font-size: 12px; color: #666; }
+  .credits { display: inline-block; font-size: 11px; background: #fee2e2; color: #991b1b; padding: 1px 8px; border-radius: 99px; font-weight: 600; }
+  footer { margin-top: 60px; padding-top: 18px; border-top: 1px solid #e5e5e5; font-size: 12px; color: #666; text-align: center; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Clay Table — Column-by-Column Build Guide</h1>
+  <p class="meta">QuadSci GTM Demo &nbsp;·&nbsp; For someone with some Clay experience &nbsp;·&nbsp; Build time: 2–2.5 hours &nbsp;·&nbsp; Free tier safe</p>
+</header>
+
+<div class="callout ok">
+  <strong>Before you start:</strong> Complete the Google Sheets workbook first (run <code>createQuadSciWorkbook()</code> in <code>QuadSci_SheetSetup.gs</code>). You need the spreadsheet URL before Step 1.
+</div>
+
+<div class="callout warn">
+  <strong>Clay free tier credit budget:</strong> 100 Data Credits/month. The demo uses approximately 24 credits total (3 accounts × ~8 credits each for Find Company + Find Person + Find Email). You have enough headroom for 1–2 demo runs. Do NOT click "Enrich All" on a column until you have checked the conditional logic is set.
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<h2>Step 0 — Create the Clay Table</h2>
+
+<div class="section-box">
+  <div class="phase-header">SETUP — One-time actions before adding any columns</div>
+  <div class="col-body">
+    <div class="step-grid">
+      <div class="num">1</div>
+      <div>Go to <strong>clay.com → New Table → Import from Google Sheets</strong></div>
+
+      <div class="num">2</div>
+      <div>Connect your Google account and select the spreadsheet created by <code>QuadSci_SheetSetup.gs</code>. Choose the <strong>Accounts</strong> tab (not Signal Log or Send Queue).</div>
+
+      <div class="num">3</div>
+      <div>Clay will ask which column is the unique identifier (primary key). Choose <strong><code>domain</code></strong>. This ensures each company gets exactly one row.</div>
+
+      <div class="num">4</div>
+      <div>Name the table: <strong>"QuadSci Pipeline"</strong></div>
+
+      <div class="num">5</div>
+      <div>After import, you should see 3 rows: acme.com, betatech.com, gammasaas.com. Confirm all 13 columns from the Accounts sheet are present as Clay columns.</div>
+    </div>
+    <div class="callout">
+      <strong>If Clay imports extra blank rows:</strong> Filter by domain ≠ empty. Clay sometimes creates placeholder rows from empty sheet rows.
+    </div>
+  </div>
+</div>
+
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<h2>Phase 1 — Cluster Detection (Formula Columns)</h2>
+<p class="meta">These columns compute from data already in the sheet. Zero enrichment credits. Build these first.</p>
+
+<!-- COL 14: cluster_qualified -->
+<div class="col-card">
+  <div class="col-header">
+    <div class="num">14</div>
+    <span>cluster_qualified</span>
+    <span class="badge formula">Formula</span>
+  </div>
+  <div class="col-body">
+    <p><strong>What it does:</strong> Returns TRUE only if an account has ≥3 signals AND at least one anchor signal. This is the gate before any enrichment runs.</p>
+    <p><strong>How to add in Clay:</strong> Add Column → Formula → paste this:</p>
+    <pre>{signal_count} >= 3 && {has_anchor} == true</pre>
+    <div class="callout">
+      <strong>Note:</strong> In Clay's formula editor, column names are wrapped in curly braces. <code>{signal_count}</code> references the <code>signal_count</code> column imported from Google Sheets. Make sure the column names match exactly (case-sensitive in some Clay versions).
+    </div>
+  </div>
+</div>
+
+<!-- COL 15: icp_pass -->
+<div class="col-card">
+  <div class="col-header">
+    <div class="num">15</div>
+    <span>icp_pass</span>
+    <span class="badge formula">Formula</span>
+  </div>
+  <div class="col-body">
+    <p><strong>What it does:</strong> Hard-filter before spending any enrichment credits. An account that fails ICP will never consume a Find Person or Find Email credit.</p>
+    <pre>{employees} >= 200 && {industry} == "B2B SaaS" && {cluster_qualified} == true</pre>
+    <p class="meta">Note: funding_stage check is omitted from the formula because the Accounts sheet already filtered to Series B+. Add it back if you expand the signal sources beyond the demo data.</p>
+  </div>
+</div>
+
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<h2>Phase 2 — Enrichment (Clay Native)</h2>
+<p class="meta">Each enrichment column must have a conditional set to only run when <code>icp_pass = TRUE</code>. Check this BEFORE clicking enrich. Each enrichment costs 1–3 credits per row.</p>
+
+<!-- COL 16: Find Company -->
+<div class="col-card">
+  <div class="col-header">
+    <div class="num">16</div>
+    <span>find_company_enrichment</span>
+    <span class="badge enrich">Enrichment</span>
+    <span class="credits">~2 credits/row</span>
+  </div>
+  <div class="col-body">
+    <table>
+      <tr><th style="width:30%">Setting</th><th>Value</th></tr>
+      <tr><td>Enrichment type</td><td>Find Company</td></tr>
+      <tr><td>Input</td><td><code>{domain}</code></td></tr>
+      <tr><td>Conditional execution</td><td><code>{icp_pass} == true</code></td></tr>
+      <tr><td>Returns</td><td>employees (more accurate), funding stage, HQ, description</td></tr>
+    </table>
+    <div class="callout warn">
+      <strong>Set the conditional BEFORE enriching.</strong> In Clay: click the column settings (gear icon) → Conditional → add condition <code>icp_pass is true</code>. Then click Enrich All.
+    </div>
+  </div>
+</div>
+
+<!-- COL 17: Find Person -->
+<div class="col-card">
+  <div class="col-header">
+    <div class="num">17</div>
+    <span>find_person</span>
+    <span class="badge enrich">Enrichment</span>
+    <span class="credits">~2 credits/row</span>
+  </div>
+  <div class="col-body">
+    <table>
+      <tr><th style="width:30%">Setting</th><th>Value</th></tr>
+      <tr><td>Enrichment type</td><td>Find Person</td></tr>
+      <tr><td>Company input</td><td><code>{domain}</code></td></tr>
+      <tr><td>Title waterfall (in order)</td><td>CRO → VP Revenue Operations → Chief Customer Officer → VP Customer Success</td></tr>
+      <tr><td>Conditional execution</td><td><code>{icp_pass} == true</code></td></tr>
+      <tr><td>What to do if no results</td><td>Set a <code>buyer_not_found</code> status — see note below</td></tr>
+    </table>
+    <p><strong>Title waterfall setup:</strong> Clay's Find Person allows multiple title attempts. Enter each title variant in order. Clay tries the first; if zero results, falls to the next. Use: <code>CRO</code>, <code>VP Revenue Operations</code>, <code>Chief Customer Officer</code>, <code>VP Customer Success</code>.</p>
+    <div class="callout">
+      <strong>Buyer not found handling:</strong> After enrichment, add a Formula column <code>buyer_found</code> = <code>{find_person.name} != ""</code>. The AI columns in Phase 4 will be conditioned on this being true.
+    </div>
+  </div>
+</div>
+
+<!-- COL 18: Find Email -->
+<div class="col-card">
+  <div class="col-header">
+    <div class="num">18</div>
+    <span>find_email</span>
+    <span class="badge enrich">Enrichment</span>
+    <span class="credits">~2 credits/row</span>
+  </div>
+  <div class="col-body">
+    <table>
+      <tr><th style="width:30%">Setting</th><th>Value</th></tr>
+      <tr><td>Enrichment type</td><td>Find Email (waterfall)</td></tr>
+      <tr><td>Person input</td><td><code>{find_person.name}</code></td></tr>
+      <tr><td>Company input</td><td><code>{domain}</code></td></tr>
+      <tr><td>Verified only</td><td>YES — toggle "Verified email only" on</td></tr>
+      <tr><td>Providers in waterfall</td><td>Hunter → Anymail → Snov (default Clay order, keep as-is)</td></tr>
+      <tr><td>Conditional execution</td><td><code>{buyer_found} == true</code></td></tr>
+    </table>
+    <div class="callout warn">
+      <strong>Demo shortcut:</strong> The Send Queue sheet pre-populates buyer emails for all 3 demo accounts. For the demo, Find Email enrichment is optional — the Apps Script reads from the Send Queue sheet directly, not from this Clay column. You can skip enrichment for email during the demo to conserve credits.
+    </div>
+  </div>
+</div>
+
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<h2>Phase 3 — Scoring (Formula Columns)</h2>
+<p class="meta">All scoring is pure arithmetic. Zero AI credits. Build after enrichment columns exist.</p>
+
+<!-- COL 19: Firmographic Score -->
+<div class="col-card">
+  <div class="col-header">
+    <div class="num">19</div>
+    <span>firmographic_score</span>
+    <span class="badge formula">Formula</span>
+  </div>
+  <div class="col-body">
+    <p>Max: 40 points. Components: employees (20 pts max), funding stage (15 pts max), ARR (15 pts max).</p>
+    <pre>
+(
+  {employees} >= 500 ? 20 :
+  {employees} >= 200 ? 15 :
+  {employees} >= 100 ? 8 : 0
+)
++
+(
+  {funding_stage} == "Series C" || {funding_stage} == "Series D" || {funding_stage} == "Series E" ? 15 :
+  {funding_stage} == "Series B" ? 10 : 0
+)
++
+(
+  {arr_estimate} >= 100000000 ? 15 :
+  {arr_estimate} >= 50000000 ? 8 : 0
+)
+    </pre>
+    <p class="meta">Clay formula ternary syntax: <code>condition ? value_if_true : value_if_false</code>. Chain with parentheses + plus sign.</p>
+  </div>
+</div>
+
+<!-- COL 20: Signal Score -->
+<div class="col-card">
+  <div class="col-header">
+    <div class="num">20</div>
+    <span>signal_score</span>
+    <span class="badge formula">Formula</span>
+  </div>
+  <div class="col-body">
+    <p>Max: 45 points. Checks which signal types fired using the <code>signal_types</code> column (comma-separated string like "S1,S2,S5").</p>
+    <pre>
+(CONTAINS({signal_types}, "S5") ? 20 : 0)
++
+(CONTAINS({signal_types}, "S2") ? 15 : 0)
++
+(CONTAINS({signal_types}, "S3") ? 15 : 0)
++
+(CONTAINS({signal_types}, "S4") ? 10 : 0)
++
+(CONTAINS({signal_types}, "S1") ? 10 : 0)
++
+({signal_count} > 3 ? ({signal_count} - 3) * 5 : 0)
+    </pre>
+    <div class="callout">
+      <strong>Clay CONTAINS syntax:</strong> <code>CONTAINS(text, substring)</code> returns true/false. This checks if "S5" appears in the signal_types string. Works correctly with comma-separated values.
+    </div>
+  </div>
+</div>
+
+<!-- COL 21: Tech Score -->
+<div class="col-card">
+  <div class="col-header">
+    <div class="num">21</div>
+    <span>tech_score</span>
+    <span class="badge formula">Formula</span>
+  </div>
+  <div class="col-body">
+    <p>Max: 15 points. Based on tech_stack column (comma-separated string).</p>
+    <pre>
+(CONTAINS({tech_stack}, "Gainsight") || CONTAINS({tech_stack}, "ChurnZero") ? 10 : 0)
++
+(CONTAINS({tech_stack}, "Mixpanel") || CONTAINS({tech_stack}, "Segment") ||
+ CONTAINS({tech_stack}, "Amplitude") ? 5 : 0)
++
+(CONTAINS({tech_stack}, "Salesforce") ? 5 : 0)
+    </pre>
+    <p class="meta">Note: capped at 15 even if both lines fire. If you want a hard cap, wrap in <code>MIN(15, ...)</code>.</p>
+  </div>
+</div>
+
+<!-- COL 22: Total Score -->
+<div class="col-card">
+  <div class="col-header">
+    <div class="num">22</div>
+    <span>total_score</span>
+    <span class="badge formula">Formula</span>
+  </div>
+  <div class="col-body">
+    <pre>{firmographic_score} + {signal_score} + {tech_score}</pre>
+    <p class="meta">Expected demo values: Acme Corp ~83, Beta Tech ~68, Gamma SaaS ~47</p>
+  </div>
+</div>
+
+<!-- COL 23: Tier -->
+<div class="col-card">
+  <div class="col-header">
+    <div class="num">23</div>
+    <span>tier</span>
+    <span class="badge formula">Formula</span>
+  </div>
+  <div class="col-body">
+    <pre>
+{total_score} >= 80 ? "Tier 1" :
+{total_score} >= 60 ? "Tier 2" :
+{total_score} >= 40 ? "Tier 3" : "Discard"
+    </pre>
+    <p>Expected: Acme Corp = Tier 1, Beta Tech = Tier 2, Gamma SaaS = Tier 3</p>
+  </div>
+</div>
+
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<h2>Phase 4 — AI Copy Generation</h2>
+<p class="meta">Uses Clay's AI Column. Model: Claude 3.5 Sonnet (select from Clay's model picker). Two AI columns: email_subject and email_body. Both conditional on tier ≠ "Discard" AND buyer_found = true.</p>
+
+<div class="callout warn">
+  <strong>AI credits:</strong> Clay's free tier includes AI Column credits. Claude 3.5 Sonnet costs roughly 1 Clay credit per AI Column call. With 3 accounts × 2 AI Columns each = ~6 AI calls. Well within free tier. Only run AI columns AFTER scoring is complete and tiers are confirmed.
+</div>
+
+<!-- COL 24: Email Subject -->
+<div class="col-card">
+  <div class="col-header">
+    <div class="num">24</div>
+    <span>email_subject</span>
+    <span class="badge ai">AI Column</span>
+  </div>
+  <div class="col-body">
+    <table>
+      <tr><th style="width:28%">Setting</th><th>Value</th></tr>
+      <tr><td>Model</td><td>Claude 3.5 Sonnet</td></tr>
+      <tr><td>Conditional</td><td><code>{tier} != "Discard" AND {buyer_found} == true</code></td></tr>
+      <tr><td>Output type</td><td>Text (short)</td></tr>
+    </table>
+    <p><strong>Prompt (paste exactly — note the dynamic variables in double curly braces):</strong></p>
+    <pre>
+You are writing a cold outbound email subject line for QuadSci, a predictive revenue intelligence platform.
+
+Account: {{company_name}} ({{domain}})
+Buyer title: {{find_person.title}}
+Tier: {{tier}}
+Signals fired: {{signal_types}}
+Signal summaries: {{signal_summaries}}
+Tech stack: {{tech_stack}}
+
+Write ONE subject line only. 4 to 7 words. No punctuation at end.
+
+Rules:
+- Tier 1: Reference the strongest anchor signal (earnings NRR drop or G2 churn review) specifically. Be direct.
+- Tier 2: Reference the buyer's tech stack pattern (e.g. "The Gainsight to Snowflake handoff problem"). Do NOT name the specific signal.
+- Tier 3: Write a pattern observation subject, not a signal callout.
+- No exclamation points. No emojis. No "Quick question". No "Following up".
+- Output the subject line text only. Nothing else.
+    </pre>
+  </div>
+</div>
+
+<!-- COL 25: Email Body -->
+<div class="col-card">
+  <div class="col-header">
+    <div class="num">25</div>
+    <span>email_body</span>
+    <span class="badge ai">AI Column</span>
+  </div>
+  <div class="col-body">
+    <table>
+      <tr><th style="width:28%">Setting</th><th>Value</th></tr>
+      <tr><td>Model</td><td>Claude 3.5 Sonnet</td></tr>
+      <tr><td>Conditional</td><td><code>{tier} != "Discard" AND {buyer_found} == true</code></td></tr>
+      <tr><td>Output type</td><td>Text (long)</td></tr>
+    </table>
+    <p><strong>System prompt (paste exactly):</strong></p>
+    <pre>
+[CONTEXT]
+You are a B2B outbound sales copywriter writing a first-touch plain-text email
+for QuadSci, a predictive revenue intelligence platform. Use only the provided
+inputs. Do not invent facts, customers, headcount, ARR, account counts, deal
+sizes, or proof points beyond the QuadSci facts listed.
+
+[QUADSCI FACTS — use only these, invent nothing else]
+- Predicts customer churn 12 to 18 months before renewal with 94% accuracy.
+- Ingests raw product telemetry (trillions of events), not CRM-derived data.
+- Statistically grounded, explainable machine learning — not black-box scoring.
+- Two products: Growth AI (churn and expansion prediction) and Cohorts AI
+  (statistically significant usage-pattern segments).
+- Real customers: Clari, Reltio. Integrates with 50+ tools including
+  Salesforce and Mixpanel.
+
+[INPUTS]
+company_name: {{company_name}}
+buyer_name: {{find_person.name}}
+buyer_title: {{find_person.title}}
+tier: {{tier}}
+signal_summaries: {{signal_summaries}}
+tech_stack: {{tech_stack}}
+
+[TIER-SPECIFIC OBJECTIVE]
+If tier is Tier 1:
+  - Subject line is 4 to 7 words.
+  - Body is 80 to 120 words (excluding greeting).
+  - Open with the strongest fired signal from signal_summaries, named by source
+    (the G2 review, the earnings call, the job posting, the LinkedIn post).
+  - Connect that signal to a QuadSci outcome relevant to the buyer title.
+  - End with: "Surprise churn is a visibility problem, not a CSM skill problem.
+    Open to 20 minutes this week?"
+  - Tone: peer-to-peer, direct. Assume the pain is acute.
+
+If tier is Tier 2:
+  - Body is 70 to 100 words (excluding greeting).
+  - Open with a pattern observation (NOT a direct callout of the specific signal).
+    Example: "Most CS-Ops teams running Gainsight on Snowflake hit the same wall..."
+  - Bridge to QuadSci as one data point, not the whole answer.
+  - End with one of: "Happy to share how Clari is handling this if useful."
+    OR "Curious if this maps to what you're seeing internally."
+  - Tone: observational, educational. Do not assume the pain is acute.
+
+If tier is Tier 3:
+  - Body is 60 to 80 words (excluding greeting).
+  - Open with an industry observation about NRR visibility at their stage.
+  - Mention QuadSci briefly as context.
+  - End with a content offer or a low-stakes question. No meeting request.
+  - Tone: informational. No urgency.
+
+[PERSONA GUIDANCE — match to buyer_title]
+If title contains CRO or Chief Revenue or VP Revenue or Head of Revenue:
+  Emphasize forecast accuracy you can defend to the board; NRR as a
+  predictable metric; preempting expansion gaps.
+
+If title contains CS or Customer Success or Chief Customer:
+  Emphasize giving CSMs runway to act, not react; removing surprise churn
+  from QBRs; shifting CSM work from triage to expansion.
+
+If title contains RevOps or Revenue Operations or CS Operations:
+  Emphasize telemetry as a first-class data source (not stitched from CRM);
+  reducing scoring fragility tied to CRM hygiene.
+
+Default if none match: CS leadership framing.
+
+[HARD RULES]
+- Greeting must be exactly "Hi [first name of buyer_name],"
+- Mention company_name naturally in sentence 1 or 2.
+- Signature is added separately — do NOT include a signature.
+
+[STRICT PROHIBITIONS]
+- NO em-dash characters. Replace with commas, periods, or regular hyphens.
+- NO exclamation points. NO emojis. NO slang.
+- NO phrases: "I hope this finds you well", "just checking in",
+  "circling back", "touching base", "wanted to reach out", "quick question".
+- NO words: "game-changer", "revolutionize", "unlock", "supercharge",
+  "leverage", "synergy", "seamless".
+- NO invented numbers. Do not state employee count, ARR, CS team size, or
+  any figure unless it is in the inputs. Do not infer or estimate.
+- NO invented customer quotes. Only reference Clari and Reltio as customers.
+- NO bullet points. NO markdown. NO links. NO placeholders.
+- If an input is empty, write around it. No empty brackets or N/A.
+
+[OUTPUT FORMAT — return the email body only, no subject line, no signature]
+Hi [first_name],
+
+[paragraph 1]
+
+[paragraph 2]
+
+[closing line from tier-specific objective above]
+    </pre>
+  </div>
+</div>
+
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<h2>Phase 5 — Review Queue (Manual Columns)</h2>
+<p class="meta">These are the columns that make the Clay table the "brain" during the demo walk-through.</p>
+
+<!-- COL 26: Action -->
+<div class="col-card">
+  <div class="col-header">
+    <div class="num">26</div>
+    <span>action</span>
+    <span class="badge manual">Manual — Dropdown</span>
+  </div>
+  <div class="col-body">
+    <table>
+      <tr><th>Setting</th><th>Value</th></tr>
+      <tr><td>Column type</td><td>Select (dropdown)</td></tr>
+      <tr><td>Options</td><td><code>APPROVE</code>, <code>REJECT</code>, <code>EDIT</code></td></tr>
+      <tr><td>Default value</td><td>(empty)</td></tr>
+    </table>
+    <p class="meta">This is the human review gate for Tier 1. Only Tier 1 rows should ever have APPROVE set. The Apps Script checks this column via the Send Queue Google Sheet.</p>
+  </div>
+</div>
+
+<!-- COL 27: Your Edits -->
+<div class="col-card">
+  <div class="col-header">
+    <div class="num">27</div>
+    <span>your_edits</span>
+    <span class="badge manual">Manual — Free Text</span>
+  </div>
+  <div class="col-body">
+    <p>Column type: <strong>Text</strong>. Leave empty to use the generated email body. If you edit the copy in Clay before approving, paste your version here — the Apps Script will use this over the generated body.</p>
+  </div>
+</div>
+
+<!-- COL 28: Send Status -->
+<div class="col-card">
+  <div class="col-header">
+    <div class="num">28</div>
+    <span>send_status</span>
+    <span class="badge automated">Automated (written by Apps Script)</span>
+  </div>
+  <div class="col-body">
+    <p>Column type: <strong>Text</strong>. Apps Script writes these values:</p>
+    <table>
+      <tr><th>Value</th><th>Meaning</th></tr>
+      <tr><td><code>queued</code></td><td>Approved, waiting for Apps Script to pick up (green)</td></tr>
+      <tr><td><code>sent</code></td><td>Email sent successfully (green)</td></tr>
+      <tr><td><code>failed</code></td><td>Send attempt failed — see error_message (red)</td></tr>
+      <tr><td><code>not_sent_mvp_watchlist</code></td><td>Tier 2 or Tier 3 — intentionally held, not a failure</td></tr>
+    </table>
+    <p class="meta">For the demo, set Acme Corp's send_status to <code>queued</code> in the Send Queue sheet BEFORE the Apps Script runs. Beta Tech and Gamma SaaS are already set to <code>not_sent_mvp_watchlist</code>.</p>
+  </div>
+</div>
+
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<h2>Clay → Send Queue: How the Integration Works</h2>
+
+<div class="callout">
+  <strong>On Clay's free tier, there is no REST API.</strong> The integration works through Google Sheets as the shared data layer.
+</div>
+
+<p>The Send Queue Google Sheet tab is already pre-populated by <code>QuadSci_SheetSetup.gs</code> with all 3 demo accounts and their generated email copy (using the worked examples from the PRD). You do not need Clay to write to the sheet automatically for the demo.</p>
+
+<p><strong>During the live demo (§11 walkthrough):</strong></p>
+<ol>
+  <li>Show the Clay table — walk through Acme Corp's score (83), tier (Tier 1), email subject, email body.</li>
+  <li>Set <code>action = APPROVE</code> in the Clay Action column (for show).</li>
+  <li>Switch to the Google Sheets Send Queue tab — Acme Corp's row is already there with <code>send_status = queued</code>. Say: "In production, Clay writes approved rows here automatically. For the demo I've pre-staged the approved row."</li>
+  <li>Open Apps Script → click <strong>Run → runDemoSendNow</strong>. The execution log appears immediately.</li>
+  <li>Open Gmail Sent folder — email is there, addressed to your own inbox per demo-mode override.</li>
+</ol>
+
+<div class="callout ok">
+  <strong>Why this is better for the demo than a fully automated integration:</strong> You control the exact moment the send happens. No waiting for a 5-minute trigger. The narrative is cleaner: you show the Clay intelligence, you approve, you run the send, you show the receipt.
+</div>
+
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<h2>BuiltWith Substitution (Free Tier)</h2>
+
+<p>The PRD references BuiltWith via Clay for tech stack detection. BuiltWith is a paid Clay enrichment. For the demo, the tech stack is already pre-populated in the Accounts Google Sheet (<code>tech_stack</code> column). No BuiltWith call needed.</p>
+
+<p><strong>For a production build:</strong> Install the Wappalyzer browser extension (free). Visit each account's website and it shows their tech stack in real-time. Manually enter into the Clay table for the initial batch. For at-scale automation, Wappalyzer's free API tier provides 50 lookups/month.</p>
+
+<footer>
+  QuadSci GTM Demo &nbsp;·&nbsp; Clay Build Guide &nbsp;·&nbsp; Build time: 2–2.5 hours
+</footer>
+
+</div>
+</body>
+</html>

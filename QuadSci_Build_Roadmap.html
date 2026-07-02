@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuadSci GTM Autopilot — One-Day Build Roadmap</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --purple: #6B46C1; --purple-light: #F3F0FF; --purple-mid: #EDE9FE;
+    --dark: #1A1A2E; --mid: #4A5568; --border: #E2E8F0;
+    --green: #16A34A; --green-bg: #F0FDF4; --amber: #D97706; --amber-bg: #FFFBEB;
+    --red: #DC2626; --red-bg: #FEF2F2; --white: #FFFFFF;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.7; color: var(--dark); background: #FAFAFA; }
+
+  .cover { background: linear-gradient(135deg, #1A1A2E 0%, #6B46C1 100%); color: white; padding: 64px 60px 52px; text-align: center; }
+  .cover-logo { font-size: 44px; font-weight: 800; letter-spacing: -1px; color: white; }
+  .cover-logo span { color: #C4B5FD; }
+  .cover-subtitle { font-size: 22px; font-weight: 300; margin-top: 10px; opacity: 0.85; }
+  .cover-title { font-size: 14px; font-weight: 400; margin-top: 14px; opacity: 0.6; font-style: italic; }
+  .cover-meta { margin-top: 28px; font-size: 13px; opacity: 0.45; }
+
+  .container { max-width: 920px; margin: 0 auto; padding: 40px 40px 80px; }
+
+  h1 { font-size: 24px; font-weight: 700; color: var(--purple); margin: 48px 0 14px; padding-bottom: 8px; border-bottom: 3px solid var(--purple); }
+  h1:first-child { margin-top: 0; }
+  h2 { font-size: 17px; font-weight: 700; color: var(--dark); margin: 28px 0 10px; }
+  h3 { font-size: 14px; font-weight: 600; color: var(--mid); margin: 20px 0 6px; }
+  p { margin-bottom: 12px; }
+  ul, ol { padding-left: 20px; margin-bottom: 14px; }
+  li { margin-bottom: 5px; }
+  code { font-family: 'JetBrains Mono', monospace; background: #F3F0FF; padding: 1px 6px; border-radius: 3px; font-size: 12.5px; color: #6B46C1; }
+  pre { font-family: 'JetBrains Mono', monospace; background: #1A1A2E; color: #C4B5FD; padding: 18px 22px; border-radius: 8px; font-size: 12.5px; line-height: 1.8; overflow-x: auto; margin: 14px 0; white-space: pre-wrap; word-wrap: break-word; }
+  pre .comment { color: #7C6FAA; }
+  pre .key { color: #A78BFA; }
+  pre .val { color: #86EFAC; }
+  pre .str { color: #FCD34D; }
+
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 22px; font-size: 13px; }
+  th { background: var(--purple); color: white; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; letter-spacing: 0.03em; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:hover td { background: #FAFAFF; }
+
+  .phase-header {
+    background: var(--dark); color: white; border-radius: 10px; padding: 20px 26px;
+    margin: 36px 0 20px; display: flex; align-items: center; gap: 18px;
+  }
+  .phase-num { font-size: 28px; font-weight: 800; color: #A78BFA; min-width: 40px; }
+  .phase-title { font-size: 18px; font-weight: 700; color: #EDE9FE; }
+  .phase-time { font-size: 12px; color: #C4B5FD; margin-top: 2px; }
+
+  .step-box {
+    border: 1.5px solid var(--border); border-radius: 8px; margin: 14px 0; overflow: hidden;
+  }
+  .step-num {
+    background: var(--purple); color: white; padding: 10px 16px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; gap: 10px;
+  }
+  .step-body { padding: 16px 18px; }
+  .step-action { background: var(--purple-light); padding: 10px 14px; border-radius: 6px; margin-top: 10px; font-size: 13px; }
+  .step-action strong { color: var(--purple); }
+
+  .callout { background: var(--purple-light); border-left: 4px solid var(--purple); padding: 13px 17px; margin: 14px 0; border-radius: 0 6px 6px 0; font-size: 13.5px; }
+  .callout-green { background: var(--green-bg); border-left-color: var(--green); }
+  .callout-amber { background: var(--amber-bg); border-left-color: var(--amber); }
+  .callout-red { background: var(--red-bg); border-left-color: var(--red); }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
+  .badge-purple { background: var(--purple); color: white; }
+  .badge-green { background: #16A34A; color: white; }
+  .badge-amber { background: var(--amber); color: white; }
+  .badge-red { background: var(--red); color: white; }
+  .badge-gray { background: #6B7280; color: white; }
+
+  .audit-card { background: #1A1A2E; color: #F3F0FF; border-radius: 10px; padding: 20px 24px; margin: 14px 0; }
+  .audit-card .label { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #A78BFA; margin-bottom: 6px; }
+  .audit-card h3 { color: #EDE9FE; font-size: 14px; margin: 0 0 8px 0; }
+  .audit-card p { color: #C4B5FD; font-size: 13px; margin: 0; }
+  .audit-card .fix { color: #86EFAC; font-weight: 600; margin-top: 6px; }
+
+  .timeline { display: flex; flex-direction: column; gap: 0; margin: 20px 0; }
+  .tl-row { display: flex; align-items: stretch; }
+  .tl-time { min-width: 80px; padding: 10px 12px; font-size: 12px; font-weight: 700; color: var(--purple); text-align: right; border-right: 3px solid var(--purple); }
+  .tl-content { padding: 10px 16px; font-size: 13px; flex: 1; border-bottom: 1px solid var(--border); }
+  .tl-content strong { color: var(--dark); }
+  .tl-content .dur { color: #9CA3AF; font-size: 11px; margin-left: 8px; }
+
+  .node-block { background: #F8F7FF; border: 1.5px solid var(--purple-mid); border-radius: 8px; padding: 14px 18px; margin: 10px 0; }
+  .node-block .node-name { font-weight: 700; color: var(--purple); font-size: 13px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .node-block .node-name .n-type { font-size: 10px; font-weight: 600; background: var(--purple); color: white; padding: 2px 7px; border-radius: 3px; }
+  .field-row { display: flex; gap: 10px; margin-bottom: 5px; font-size: 13px; }
+  .field-label { min-width: 140px; color: var(--mid); font-weight: 600; font-size: 12px; }
+  .field-val { color: var(--dark); }
+  .field-val code { font-size: 12px; }
+
+  .wf-flow { background: var(--dark); border-radius: 8px; padding: 16px 20px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #C4B5FD; line-height: 2; }
+  .wf-node { color: #A78BFA; font-weight: 700; }
+  .wf-arrow { color: #7C6FAA; }
+  .wf-note { color: #6B7280; font-style: italic; }
+
+  .key-box { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+  .key-row { display: flex; align-items: center; gap: 12px; background: white; border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; }
+  .key-tool { min-width: 140px; font-weight: 700; font-size: 13px; color: var(--dark); }
+  .key-where { font-size: 12px; color: var(--mid); flex: 1; }
+  .key-empty { min-width: 120px; background: #F3F0FF; border-radius: 4px; height: 22px; border: 1px dashed var(--purple); }
+
+  .test-check { display: flex; align-items: flex-start; gap: 12px; margin: 8px 0; }
+  .test-check .box { width: 18px; height: 18px; border: 2px solid var(--purple); border-radius: 3px; flex-shrink: 0; margin-top: 2px; }
+  .test-check p { margin: 0; font-size: 13px; }
+
+  .prompt-box { background: #1A1A2E; border-radius: 10px; padding: 20px 24px; margin: 16px 0; }
+  .prompt-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #A78BFA; display: block; margin-bottom: 6px; }
+  .prompt-text { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #C4B5FD; line-height: 1.9; white-space: pre-wrap; word-wrap: break-word; }
+
+  @media print { .cover { -webkit-print-color-adjust: exact; } }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cover-logo">Quad<span>Sci</span></div>
+  <div class="cover-subtitle">GTM Autopilot — One-Day Build Roadmap</div>
+  <div class="cover-title">Principal Systems Architect · Build Guide for Non-Technical Users</div>
+  <div class="cover-meta">Based on the QuadSci GTM Engineer Exercise PRD · May 2026 · Total cost to build: $0</div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>What You're Building (Plain English)</h1>
+
+<p>You are building a system that runs on its own, 24 hours a day, doing 4 things automatically:</p>
+
+<ol>
+  <li><strong>Watching the internet</strong> for signs that a company might be ready to buy QuadSci (job postings, G2 reviews, executive LinkedIn posts, funding news).</li>
+  <li><strong>Scoring each company</strong> using a 100-point rubric — bigger companies with more signals get higher scores. Only companies scoring 60+ move forward.</li>
+  <li><strong>Writing a personalized email</strong> for each qualified company using AI — an email that references the exact signals you found, not a generic template.</li>
+  <li><strong>Either sending the email automatically</strong> (for mid-tier accounts) or <strong>putting it in a queue for you to approve with one click</strong> (for top accounts).</li>
+</ol>
+
+<p>Your only daily job: spend 20–30 minutes reviewing and approving the top accounts in a Google Sheet. Everything else runs itself.</p>
+
+<div class="callout callout-green">
+  ✅ <strong>Total cost: $0/month.</strong> Every tool used has a free tier that covers this workflow's volume (40–80 accounts/month).
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Architect's PRD Audit — 5 Issues Fixed Before You Build</h1>
+
+<p>Before you build anything, you need to know these issues that exist in the PRD. I've already fixed them in the build plan below — you don't have to do anything differently, but understanding <em>why</em> a step looks a certain way will save you confusion.</p>
+
+<div class="audit-card">
+  <div class="label">ISSUE #1 · CRITICAL</div>
+  <h3>Railway's free tier no longer exists</h3>
+  <p>The PRD says "self-host n8n on Railway free tier." Railway removed their free tier in August 2024.</p>
+  <p class="fix">✓ FIX: We'll use n8n.cloud (14-day free trial, no credit card needed). It's simpler, no server to manage, and the trial covers the whole exercise.</p>
+</div>
+
+<div class="audit-card">
+  <div class="label">ISSUE #2 · CRITICAL</div>
+  <h3>Apify's free tier only allows 5 Actor runs/month — not daily</h3>
+  <p>The PRD describes daily LinkedIn + G2 scraping. Apify's free tier gives you 5 runs/month total. Daily scraping would exhaust that in 2.5 days.</p>
+  <p class="fix">✓ FIX: We use Apify once per week (Monday morning). Daily monitoring uses Google Alerts RSS feeds, which are unlimited and free. Weekly Apify runs catch what RSS misses.</p>
+</div>
+
+<div class="audit-card">
+  <div class="label">ISSUE #3 · MODERATE</div>
+  <h3>Apollo.io free tier doesn't give full API access for sequence enrollment</h3>
+  <p>The PRD describes n8n automatically enrolling contacts into Apollo sequences via API. Apollo's API for sequence enrollment requires at least the Basic plan ($49/mo).</p>
+  <p class="fix">✓ FIX: n8n generates the email and stages it in Google Sheets. For Tier 2, you create a sequence in Apollo's web UI manually (10 minutes of setup, then hands-off). For Tier 1, n8n sends via Gmail directly — which actually has better deliverability for high-value targets anyway.</p>
+</div>
+
+<div class="audit-card">
+  <div class="label">ISSUE #4 · MINOR</div>
+  <h3>The PRD mentions a "Python script" for copy generation — not needed</h3>
+  <p>Section 8.4 describes a Python script to call the AI. You don't need to write any Python. n8n has a built-in AI node that does this with zero code.</p>
+  <p class="fix">✓ FIX: Everything runs inside n8n workflows. No Python, no terminal, no code files.</p>
+</div>
+
+<div class="audit-card">
+  <div class="label">ISSUE #5 · MINOR</div>
+  <h3>The Google Sheets schema is not defined in the PRD</h3>
+  <p>The PRD says "use Google Sheets" but doesn't specify the exact columns. n8n needs to write to specific columns. If the columns don't match, nothing gets saved correctly.</p>
+  <p class="fix">✓ FIX: Phase 1 of this guide gives you the exact, ready-to-create Google Sheet with every column named and explained. Copy it exactly.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Your Day at a Glance</h1>
+
+<div class="timeline">
+  <div class="tl-row">
+    <div class="tl-time">8:00 AM</div>
+    <div class="tl-content"><strong>Phase 0: Create Accounts + Collect API Keys</strong> <span class="dur">45 min</span><br>Sign up for 6 tools, gather your API keys in one place.</div>
+  </div>
+  <div class="tl-row">
+    <div class="tl-time">8:45 AM</div>
+    <div class="tl-content"><strong>Phase 1: Set Up Google Sheet</strong> <span class="dur">30 min</span><br>Create the master database with exact columns from this guide.</div>
+  </div>
+  <div class="tl-row">
+    <div class="tl-time">9:15 AM</div>
+    <div class="tl-content"><strong>Phase 2: Set Up n8n + Save Credentials</strong> <span class="dur">30 min</span><br>Launch n8n Cloud, save all API keys as credentials inside n8n.</div>
+  </div>
+  <div class="tl-row">
+    <div class="tl-time">9:45 AM</div>
+    <div class="tl-content"><strong>Phase 3: Build Workflow 1 — Signal Collector</strong> <span class="dur">45 min</span><br>n8n polls Google Alerts RSS + Reddit every morning and logs signals to your sheet.</div>
+  </div>
+  <div class="tl-row">
+    <div class="tl-time">10:30 AM</div>
+    <div class="tl-content"><strong>Phase 4: Build Workflow 2 — Weekly Apify Scraper</strong> <span class="dur">30 min</span><br>Apify scrapes LinkedIn Jobs + G2 once per week, results flow into the sheet.</div>
+  </div>
+  <div class="tl-row">
+    <div class="tl-time">11:00 AM</div>
+    <div class="tl-content"><strong>Phase 5: Build Workflow 3 — Cluster Detector + Clay Enrichment</strong> <span class="dur">45 min</span><br>Every 6 hours, check if any company has 3+ signals in 21 days. If yes, enrich via Clay.</div>
+  </div>
+  <div class="tl-row">
+    <div class="tl-time">11:45 AM</div>
+    <div class="tl-content"><strong>BREAK</strong> <span class="dur">15 min</span></div>
+  </div>
+  <div class="tl-row">
+    <div class="tl-time">12:00 PM</div>
+    <div class="tl-content"><strong>Phase 6: Build Workflow 4 — AI Scorer</strong> <span class="dur">45 min</span><br>OpenRouter scores each enriched account 0–100 and assigns a tier. Fully automatic.</div>
+  </div>
+  <div class="tl-row">
+    <div class="tl-time">12:45 PM</div>
+    <div class="tl-content"><strong>LUNCH</strong> <span class="dur">45 min</span></div>
+  </div>
+  <div class="tl-row">
+    <div class="tl-time">1:30 PM</div>
+    <div class="tl-content"><strong>Phase 7: Build Workflow 5 — Email Copy Generator</strong> <span class="dur">45 min</span><br>OpenRouter writes a signal-grounded email for each Tier 1/2 account.</div>
+  </div>
+  <div class="tl-row">
+    <div class="tl-time">2:15 PM</div>
+    <div class="tl-content"><strong>Phase 8: Build Workflow 6 — Approval Queue Monitor</strong> <span class="dur">30 min</span><br>Every 15 min, check Google Sheet for approved emails and send them via Gmail.</div>
+  </div>
+  <div class="tl-row">
+    <div class="tl-time">2:45 PM</div>
+    <div class="tl-content"><strong>Phase 9: Set Up Apollo Sequences (Manual, One-Time)</strong> <span class="dur">30 min</span><br>Create 2 sequences in Apollo's web UI for Tier 2 follow-up cadence.</div>
+  </div>
+  <div class="tl-row">
+    <div class="tl-time">3:15 PM</div>
+    <div class="tl-content"><strong>Phase 10: End-to-End Test with Fake Data</strong> <span class="dur">60 min</span><br>Manually insert a test signal into your sheet and watch it flow through every stage.</div>
+  </div>
+  <div class="tl-row">
+    <div class="tl-time">4:15 PM</div>
+    <div class="tl-content"><strong>Phase 11: Activate All Workflows + Go Live</strong> <span class="dur">30 min</span><br>Turn on all 6 workflows. The system starts running on its own from here.</div>
+  </div>
+  <div class="tl-row">
+    <div class="tl-time">4:45 PM</div>
+    <div class="tl-content"><strong>DONE ✓</strong> <span class="dur">First signals expected within 24 hours</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Phase 0 — Create Accounts + Collect API Keys</h1>
+<p style="color:var(--mid)">⏱ 45 minutes · Do these in order, one tab at a time</p>
+
+<h2>Step 0.1 — Sign Up for All 6 Tools</h2>
+
+<table>
+  <tr><th>#</th><th>TOOL</th><th>WHERE TO SIGN UP</th><th>WHAT IT DOES IN YOUR SYSTEM</th><th>FREE LIMIT</th></tr>
+  <tr>
+    <td>1</td><td><strong>n8n Cloud</strong></td>
+    <td><code>n8n.io</code> → "Get started free"</td>
+    <td>The brain. All 6 workflows run here.</td>
+    <td>14-day trial (no credit card)</td>
+  </tr>
+  <tr>
+    <td>2</td><td><strong>Clay</strong></td>
+    <td><code>clay.com</code> → "Get started free"</td>
+    <td>Enriches company data automatically</td>
+    <td>100 credits/month</td>
+  </tr>
+  <tr>
+    <td>3</td><td><strong>Apify</strong></td>
+    <td><code>apify.com</code> → "Sign up for free"</td>
+    <td>Scrapes LinkedIn Jobs + G2 reviews weekly</td>
+    <td>5 Actor runs/month</td>
+  </tr>
+  <tr>
+    <td>4</td><td><strong>OpenRouter</strong></td>
+    <td><code>openrouter.ai</code> → "Sign in" → create account</td>
+    <td>Free AI for scoring + email writing</td>
+    <td>200 requests/day (unlimited for our volume)</td>
+  </tr>
+  <tr>
+    <td>5</td><td><strong>Apollo.io</strong></td>
+    <td><code>apollo.io</code> → "Sign up for free"</td>
+    <td>Email sequences for Tier 2</td>
+    <td>2 sequences, 250 emails/day</td>
+  </tr>
+  <tr>
+    <td>6</td><td><strong>Google Account</strong></td>
+    <td>You likely already have one</td>
+    <td>Sheets (database) + Gmail (Tier 1 sending)</td>
+    <td>Unlimited</td>
+  </tr>
+</table>
+
+<h2>Step 0.2 — Collect Your API Keys (Save in a Text File)</h2>
+
+<p>Open Notepad (or any text app) and collect these keys now. You'll paste them into n8n in Phase 2.</p>
+
+<div class="key-box">
+  <div class="key-row">
+    <div class="key-tool">OpenRouter API Key</div>
+    <div class="key-where">openrouter.ai → Settings (top right) → API Keys → Create Key → Copy</div>
+    <div class="key-empty"></div>
+  </div>
+  <div class="key-row">
+    <div class="key-tool">Clay API Key</div>
+    <div class="key-where">clay.com → Settings (bottom left) → Integrations → API Key → Copy</div>
+    <div class="key-empty"></div>
+  </div>
+  <div class="key-row">
+    <div class="key-tool">Apify API Token</div>
+    <div class="key-where">apify.com → Settings → Integrations → Personal API tokens → Copy</div>
+    <div class="key-empty"></div>
+  </div>
+</div>
+
+<div class="callout callout-amber">
+  ⚠️ <strong>Keep this text file open all day.</strong> You'll need these keys multiple times. Do not close it.
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Phase 1 — Set Up Google Sheets (Your Central Database)</h1>
+<p style="color:var(--mid)">⏱ 30 minutes · This is the control panel for the whole system</p>
+
+<p>Create a new Google Sheet and name it exactly: <strong>QuadSci Signal Intelligence</strong></p>
+
+<p>Inside it, create <strong>3 tabs</strong> by clicking the "+" at the bottom of the sheet. Name them exactly as shown below.</p>
+
+<h2>Tab 1: Signal Log</h2>
+<p>Every signal detected goes here first. Create these columns in Row 1, in this order:</p>
+
+<table>
+  <tr><th>COLUMN</th><th>COLUMN LETTER</th><th>WHAT GOES HERE</th><th>EXAMPLE</th></tr>
+  <tr><td><strong>Date</strong></td><td>A</td><td>The date the signal was detected</td><td>2026-05-25</td></tr>
+  <tr><td><strong>Company Domain</strong></td><td>B</td><td>The company's website domain — used as a unique ID</td><td>meridian.com</td></tr>
+  <tr><td><strong>Company Name</strong></td><td>C</td><td>The company's full name</td><td>Meridian HQ</td></tr>
+  <tr><td><strong>Signal Type</strong></td><td>D</td><td>Which of the 5 signals this is (type the number 1-5)</td><td>2</td></tr>
+  <tr><td><strong>Signal Summary</strong></td><td>E</td><td>A short description of the signal found</td><td>G2 review: "3 surprise churns last quarter"</td></tr>
+  <tr><td><strong>Source URL</strong></td><td>F</td><td>Link to the original signal (G2 page, job posting, etc.)</td><td>https://g2.com/...</td></tr>
+  <tr><td><strong>Status</strong></td><td>G</td><td>State of this signal. Will be: New, Clustered, or Expired</td><td>New</td></tr>
+</table>
+
+<h2>Tab 2: Scored Accounts</h2>
+<p>When a company hits 3+ signals, it moves here and gets enriched and scored. Create these columns:</p>
+
+<table>
+  <tr><th>COLUMN</th><th>COL</th><th>WHAT GOES HERE</th></tr>
+  <tr><td><strong>Date Flagged</strong></td><td>A</td><td>When the cluster was first detected</td></tr>
+  <tr><td><strong>Company Domain</strong></td><td>B</td><td>Same domain as Signal Log — the unique ID</td></tr>
+  <tr><td><strong>Company Name</strong></td><td>C</td><td>Company full name</td></tr>
+  <tr><td><strong>Signal Count</strong></td><td>D</td><td>How many signals detected (3, 4, or 5)</td></tr>
+  <tr><td><strong>Signal Types</strong></td><td>E</td><td>Which signal types (e.g. "1,2,4")</td></tr>
+  <tr><td><strong>Signal Summaries</strong></td><td>F</td><td>Combined text of all signal descriptions</td></tr>
+  <tr><td><strong>Employee Count</strong></td><td>G</td><td>Filled in by Clay automatically</td></tr>
+  <tr><td><strong>Funding Stage</strong></td><td>H</td><td>Filled in by Clay automatically</td></tr>
+  <tr><td><strong>Estimated ARR</strong></td><td>I</td><td>Filled in by Clay automatically</td></tr>
+  <tr><td><strong>Tech Stack</strong></td><td>J</td><td>Filled in by Clay (e.g. "Gainsight, Salesforce")</td></tr>
+  <tr><td><strong>CS Headcount</strong></td><td>K</td><td>Filled in by Clay (number of CS team members)</td></tr>
+  <tr><td><strong>Firmographic Score</strong></td><td>L</td><td>Filled in by AI Scorer (0-40 pts)</td></tr>
+  <tr><td><strong>Signal Score</strong></td><td>M</td><td>Filled in by AI Scorer (0-45 pts)</td></tr>
+  <tr><td><strong>Tech Score</strong></td><td>N</td><td>Filled in by AI Scorer (0-15 pts)</td></tr>
+  <tr><td><strong>Total Score</strong></td><td>O</td><td>Filled in by AI Scorer (0-100 pts)</td></tr>
+  <tr><td><strong>Tier</strong></td><td>P</td><td>Filled in by AI Scorer (Tier 1, 2, 3, or Discard)</td></tr>
+  <tr><td><strong>Buyer Name</strong></td><td>Q</td><td>Filled in by Clay (e.g. "Sarah Chen")</td></tr>
+  <tr><td><strong>Buyer Title</strong></td><td>R</td><td>Filled in by Clay (e.g. "CRO")</td></tr>
+  <tr><td><strong>Buyer Email</strong></td><td>S</td><td>Filled in by Clay</td></tr>
+  <tr><td><strong>Email Verified</strong></td><td>T</td><td>YES or NO — filled in by Clay</td></tr>
+  <tr><td><strong>Status</strong></td><td>U</td><td>Tracks where this account is in the pipeline (see below)</td></tr>
+</table>
+
+<div class="callout">
+  <strong>Status values for the Scored Accounts tab (in order):</strong><br>
+  <code>Pending Enrichment</code> → <code>Enriched</code> → <code>Scored</code> → <code>Copy Ready</code> → <code>In Review Queue</code> → <code>Approved</code> → <code>Sent</code> → <code>Replied</code> → <code>Meeting Booked</code>
+</div>
+
+<h2>Tab 3: Review Queue</h2>
+<p>This is your daily dashboard. Every morning, you open this tab, read the email drafts, and type APPROVE or REJECT.</p>
+
+<table>
+  <tr><th>COLUMN</th><th>COL</th><th>WHAT GOES HERE</th></tr>
+  <tr><td><strong>Date Added</strong></td><td>A</td><td>When this account entered the queue</td></tr>
+  <tr><td><strong>Company Name</strong></td><td>B</td><td>Company name</td></tr>
+  <tr><td><strong>Buyer Name</strong></td><td>C</td><td>Who the email is addressed to</td></tr>
+  <tr><td><strong>Buyer Title</strong></td><td>D</td><td>Their job title</td></tr>
+  <tr><td><strong>Buyer Email</strong></td><td>E</td><td>Email address to send to</td></tr>
+  <tr><td><strong>Tier</strong></td><td>F</td><td>Tier 1 or Tier 2</td></tr>
+  <tr><td><strong>Total Score</strong></td><td>G</td><td>The AI score (0-100)</td></tr>
+  <tr><td><strong>Signal Summary</strong></td><td>H</td><td>The signals that triggered this account</td></tr>
+  <tr><td><strong>Generated Email</strong></td><td>I</td><td>The full email draft written by AI — read this carefully</td></tr>
+  <tr><td><strong>Your Action</strong></td><td>J</td><td><strong>YOU TYPE HERE:</strong> APPROVE, REJECT, or EDIT</td></tr>
+  <tr><td><strong>Your Notes</strong></td><td>K</td><td>Optional — if you EDIT, paste the revised email here</td></tr>
+  <tr><td><strong>Send Date</strong></td><td>L</td><td>Filled automatically when sent</td></tr>
+  <tr><td><strong>Reply Date</strong></td><td>M</td><td>Filled manually when you get a reply</td></tr>
+  <tr><td><strong>Outcome</strong></td><td>N</td><td>Meeting Booked / No Reply / Wrong Person / etc.</td></tr>
+</table>
+
+<div class="callout callout-green">
+  ✅ <strong>Share the Google Sheet URL with yourself.</strong> Right-click the sheet tab → Share → copy link. You'll need this URL in n8n to connect all workflows to the right spreadsheet.
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Phase 2 — Set Up n8n + Save Credentials</h1>
+<p style="color:var(--mid)">⏱ 30 minutes · Done once, used by all 6 workflows</p>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 2.1</span> Log Into n8n Cloud and Create Your First Workspace</div>
+  <div class="step-body">
+    <p>After signing up at n8n.io, you'll land on a page that looks like an empty board — this is the <strong>canvas</strong> where you build workflows. Each workflow is a chain of boxes (called "nodes") connected by arrows.</p>
+    <p>You don't need to build anything yet. First, save your API keys.</p>
+  </div>
+</div>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 2.2</span> Save Credentials (Your API Keys) — Do All 5 Now</div>
+  <div class="step-body">
+    <p>In n8n, click the person icon in the top-right corner → select <strong>Credentials</strong> → click <strong>Add Credential</strong>. Repeat this for each of the 5 credentials below.</p>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">CREDENTIAL 1</span> OpenRouter (for AI scoring + email writing)</div>
+      <div class="field-row"><div class="field-label">Type to search:</div><div class="field-val"><code>HTTP Header Auth</code></div></div>
+      <div class="field-row"><div class="field-label">Name it:</div><div class="field-val"><code>OpenRouter</code></div></div>
+      <div class="field-row"><div class="field-label">Header Name:</div><div class="field-val"><code>Authorization</code></div></div>
+      <div class="field-row"><div class="field-label">Header Value:</div><div class="field-val"><code>Bearer [paste your OpenRouter API key here]</code></div></div>
+      <div class="field-row"><div class="field-label">Second Header Name:</div><div class="field-val"><code>HTTP-Referer</code></div></div>
+      <div class="field-row"><div class="field-label">Second Header Value:</div><div class="field-val"><code>https://quadsci.ai</code></div></div>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">CREDENTIAL 2</span> Apify (for LinkedIn + G2 scraping)</div>
+      <div class="field-row"><div class="field-label">Type to search:</div><div class="field-val"><code>Header Auth</code></div></div>
+      <div class="field-row"><div class="field-label">Name it:</div><div class="field-val"><code>Apify</code></div></div>
+      <div class="field-row"><div class="field-label">Header Name:</div><div class="field-val"><code>Authorization</code></div></div>
+      <div class="field-row"><div class="field-label">Header Value:</div><div class="field-val"><code>Bearer [paste your Apify API token here]</code></div></div>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">CREDENTIAL 3</span> Google Sheets (to read/write your spreadsheet)</div>
+      <div class="field-row"><div class="field-label">Type to search:</div><div class="field-val"><code>Google Sheets OAuth2</code></div></div>
+      <div class="field-row"><div class="field-label">Action:</div><div class="field-val">Click <strong>Sign in with Google</strong> → choose your Google account → click Allow all permissions</div></div>
+      <div class="field-row"><div class="field-label">Name it:</div><div class="field-val"><code>Google Sheets - QuadSci</code></div></div>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">CREDENTIAL 4</span> Gmail (to send Tier 1 emails)</div>
+      <div class="field-row"><div class="field-label">Type to search:</div><div class="field-val"><code>Gmail OAuth2</code></div></div>
+      <div class="field-row"><div class="field-label">Action:</div><div class="field-val">Click <strong>Sign in with Google</strong> → same Google account → Allow</div></div>
+      <div class="field-row"><div class="field-label">Name it:</div><div class="field-val"><code>Gmail - QuadSci Outbound</code></div></div>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">CREDENTIAL 5</span> Clay Webhook (to trigger enrichment)</div>
+      <div class="field-row"><div class="field-label">Note:</div><div class="field-val">Clay uses a webhook URL, not an API key. You'll get this URL in Phase 5. Skip for now — come back after setting up Clay.</div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Phase 3 — Workflow 1: Daily Signal Collector</h1>
+<p style="color:var(--mid)">⏱ 45 minutes · Runs every morning at 7am</p>
+
+<p><strong>What this workflow does in plain English:</strong> Every morning at 7am, it checks 4 RSS feeds (Google Alerts + Reddit), reads the new items, checks if any mention your target keywords, and if they do, writes the signal to your Google Sheet.</p>
+
+<div class="wf-flow">
+  <span class="wf-node">Schedule Trigger</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">HTTP: Google Alerts Feed 1</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">Filter: keyword check</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">HTTP: Google Alerts Feed 2</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">HTTP: Reddit RSS</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">Merge all results</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">Remove duplicates</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">Google Sheets: write to Signal Log</span>
+</div>
+
+<h2>First: Create 5 Google Alerts (10 minutes)</h2>
+<p>Go to <strong>google.com/alerts</strong>. Create these 5 alerts one by one. For each, choose <strong>RSS feed</strong> as the delivery format (not email).</p>
+
+<table>
+  <tr><th>ALERT #</th><th>SEARCH QUERY — COPY EXACTLY</th><th>SIGNAL TYPE IT CATCHES</th></tr>
+  <tr><td>Alert 1</td><td><code>site:greenhouse.io OR site:lever.co "Gainsight" OR "ChurnZero"</code></td><td>Signal 1: Job postings (CS platform migration)</td></tr>
+  <tr><td>Alert 2</td><td><code>"Gainsight" OR "ChurnZero" "forecast" OR "churn" OR "renewal" site:g2.com</code></td><td>Signal 2: G2 reviews</td></tr>
+  <tr><td>Alert 3</td><td><code>"NRR" OR "net revenue retention" OR "renewal forecast" "blind spot" OR "surprise"</code></td><td>Signal 3: LinkedIn/web posts about NRR pain</td></tr>
+  <tr><td>Alert 4</td><td><code>hires OR appoints "VP" OR "Director" "Customer Success" OR "Revenue Operations"</code></td><td>Signal 4: Leadership hire announcements</td></tr>
+  <tr><td>Alert 5</td><td><code>"net revenue retention" OR "NRR" "earnings" OR "investor letter" OR "10-K"</code></td><td>Signal 5: Public earnings/investor statements</td></tr>
+</table>
+
+<p>After creating each alert, click the RSS icon (it looks like an antenna with waves). <strong>Copy the RSS URL</strong> — it will look like: <code>https://www.google.com/alerts/feeds/[numbers]/[numbers]</code>. Save all 5 URLs in your text file.</p>
+
+<h2>Build the Workflow in n8n</h2>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 3.1</span> Create a new workflow — name it "Signal Collector (Daily)"</div>
+  <div class="step-body">In n8n, click <strong>+ New Workflow</strong>. Name it "Signal Collector (Daily)".</div>
+</div>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 3.2</span> Add Schedule Trigger node</div>
+  <div class="step-body">
+    <p>Click <strong>Add first step</strong> → search for <strong>Schedule Trigger</strong> → select it.</p>
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE</span> Schedule Trigger</div>
+      <div class="field-row"><div class="field-label">Trigger interval:</div><div class="field-val">Days</div></div>
+      <div class="field-row"><div class="field-label">Days between triggers:</div><div class="field-val">1</div></div>
+      <div class="field-row"><div class="field-label">Trigger at hour:</div><div class="field-val">7</div></div>
+      <div class="field-row"><div class="field-label">Trigger at minute:</div><div class="field-val">0</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 3.3</span> Add 5 HTTP Request nodes (one per Google Alerts RSS feed)</div>
+  <div class="step-body">
+    <p>Click the <strong>+</strong> after the Schedule Trigger. Add an <strong>HTTP Request</strong> node for each RSS feed. Repeat 5 times (one for each Google Alert).</p>
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE</span> HTTP Request — Alert 1 (repeat for each)</div>
+      <div class="field-row"><div class="field-label">Method:</div><div class="field-val">GET</div></div>
+      <div class="field-row"><div class="field-label">URL:</div><div class="field-val">Paste the RSS URL for that alert</div></div>
+      <div class="field-row"><div class="field-label">Authentication:</div><div class="field-val">None</div></div>
+      <div class="field-row"><div class="field-label">Response format:</div><div class="field-val">String</div></div>
+    </div>
+    <p>Also add one more HTTP Request node for Reddit:</p>
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE</span> HTTP Request — Reddit r/CustomerSuccess</div>
+      <div class="field-row"><div class="field-label">URL:</div><div class="field-val"><code>https://www.reddit.com/r/CustomerSuccess/new.json?limit=25&t=day</code></div></div>
+      <div class="field-row"><div class="field-label">Headers:</div><div class="field-val">Add header: <code>User-Agent</code> = <code>QuadSciBot/1.0</code></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 3.4</span> Add XML Parser nodes (to read RSS feeds)</div>
+  <div class="step-body">
+    <p>After each Google Alerts HTTP node, add an <strong>XML</strong> node to convert the RSS format to readable data.</p>
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE</span> XML (after each Google Alerts HTTP node)</div>
+      <div class="field-row"><div class="field-label">Mode:</div><div class="field-val">XML to JSON</div></div>
+      <div class="field-row"><div class="field-label">Property name:</div><div class="field-val"><code>data</code></div></div>
+    </div>
+    <p>The Reddit node returns JSON already — no XML node needed.</p>
+  </div>
+</div>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 3.5</span> Add a Merge node to combine all signal sources</div>
+  <div class="step-body">
+    <p>Search for <strong>Merge</strong> → add it → connect all 6 HTTP outputs into it.</p>
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE</span> Merge</div>
+      <div class="field-row"><div class="field-label">Mode:</div><div class="field-val">Append</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 3.6</span> Add Google Sheets node to write signals</div>
+  <div class="step-body">
+    <p>After the Merge node, add a <strong>Google Sheets</strong> node.</p>
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE</span> Google Sheets — Write Signal</div>
+      <div class="field-row"><div class="field-label">Credential:</div><div class="field-val">Google Sheets - QuadSci</div></div>
+      <div class="field-row"><div class="field-label">Operation:</div><div class="field-val">Append Row</div></div>
+      <div class="field-row"><div class="field-label">Spreadsheet:</div><div class="field-val">Search for "QuadSci Signal Intelligence" → select it</div></div>
+      <div class="field-row"><div class="field-label">Sheet:</div><div class="field-val">Signal Log</div></div>
+      <div class="field-row"><div class="field-label">Columns to map:</div><div class="field-val">
+        Date → <code>{{ $now.toISODate() }}</code><br>
+        Signal Summary → <code>{{ $json.title }}</code><br>
+        Source URL → <code>{{ $json.link }}</code><br>
+        Status → <code>New</code><br>
+        Company Domain → <code>{{ $json.company_domain }}</code> (leave blank for now — you'll fill this manually for the first few)<br>
+        Signal Type → <code>1</code> (change per node)
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<div class="callout callout-green">
+  ✅ <strong>How to test this workflow:</strong> Click the <strong>Execute Workflow</strong> button (play icon). After a few seconds, check your Signal Log tab in Google Sheets. You should see rows appearing. If the sheet is empty, check that your Google Alerts RSS URLs are correct.
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Phase 4 — Workflow 2: Weekly Apify Scraper</h1>
+<p style="color:var(--mid)">⏱ 30 minutes · Runs every Monday at 9am</p>
+
+<p><strong>What this does:</strong> Once a week, triggers Apify to scrape LinkedIn Jobs for your target keywords. Apify does the scraping and returns structured results. n8n reads the results and writes them to Signal Log.</p>
+
+<div class="wf-flow">
+  <span class="wf-node">Schedule Trigger (Monday 9am)</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">HTTP: Start Apify LinkedIn Jobs Actor</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">Wait 5 minutes</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">HTTP: Get Apify Run Results</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">Filter: ICP keywords</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">Google Sheets: write to Signal Log</span>
+</div>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 4.1</span> Find the right Apify Actor</div>
+  <div class="step-body">
+    <p>Go to apify.com → click <strong>Store</strong> → search for <strong>"LinkedIn Jobs Scraper"</strong>. Click on the first result by Apify. Note the Actor ID — it will be in the URL: <code>apify/linkedin-jobs-scraper</code>. Copy this.</p>
+  </div>
+</div>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 4.2</span> Build the Apify trigger workflow in n8n</div>
+  <div class="step-body">
+    <p>Create a new workflow: <strong>Apify Scraper (Weekly)</strong></p>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 1</span> Schedule Trigger</div>
+      <div class="field-row"><div class="field-label">Trigger interval:</div><div class="field-val">Weeks</div></div>
+      <div class="field-row"><div class="field-label">Day of week:</div><div class="field-val">Monday</div></div>
+      <div class="field-row"><div class="field-label">At hour:</div><div class="field-val">9</div></div>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 2</span> HTTP Request — Start Apify Actor</div>
+      <div class="field-row"><div class="field-label">Method:</div><div class="field-val">POST</div></div>
+      <div class="field-row"><div class="field-label">URL:</div><div class="field-val"><code>https://api.apify.com/v2/acts/apify~linkedin-jobs-scraper/runs</code></div></div>
+      <div class="field-row"><div class="field-label">Authentication:</div><div class="field-val">Apify (credential you saved)</div></div>
+      <div class="field-row"><div class="field-label">Body (JSON):</div><div class="field-val">Paste the JSON below ↓</div></div>
+    </div>
+
+    <pre>{
+  <span class="key">"searchQueries"</span>: [
+    <span class="str">"RevOps Gainsight"</span>,
+    <span class="str">"CS Ops ChurnZero"</span>,
+    <span class="str">"renewal intelligence infrastructure"</span>,
+    <span class="str">"CS platform migration"</span>
+  ],
+  <span class="key">"maxResults"</span>: <span class="val">50</span>,
+  <span class="key">"contractType"</span>: <span class="str">"Full-time"</span>
+}</pre>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 3</span> Wait</div>
+      <div class="field-row"><div class="field-label">Wait amount:</div><div class="field-val">5</div></div>
+      <div class="field-row"><div class="field-label">Wait unit:</div><div class="field-val">Minutes</div></div>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 4</span> HTTP Request — Get Results</div>
+      <div class="field-row"><div class="field-label">Method:</div><div class="field-val">GET</div></div>
+      <div class="field-row"><div class="field-label">URL:</div><div class="field-val"><code>https://api.apify.com/v2/acts/apify~linkedin-jobs-scraper/runs/last/dataset/items</code></div></div>
+      <div class="field-row"><div class="field-label">Authentication:</div><div class="field-val">Apify</div></div>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 5</span> Google Sheets — Append to Signal Log</div>
+      <div class="field-row"><div class="field-label">Same setup as Workflow 1 Signal Log write.</div><div class="field-val">Signal Type = 1, Date = today, Status = New</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Phase 5 — Set Up Clay + Workflow 3: Cluster Detector</h1>
+<p style="color:var(--mid)">⏱ 45 minutes · Cluster check runs every 6 hours</p>
+
+<p><strong>What this does:</strong> Every 6 hours, reads your Signal Log and checks if any company has 3 or more signals within the last 21 days. If yes, that company gets pushed to the Scored Accounts tab and sent to Clay for enrichment.</p>
+
+<h2>First: Set Up Clay (15 minutes)</h2>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 5.1</span> Create a Clay table for enrichment</div>
+  <div class="step-body">
+    <ol>
+      <li>Log into clay.com → click <strong>+ New Table</strong></li>
+      <li>Name it: <strong>QuadSci Account Enrichment</strong></li>
+      <li>Add columns: Company Domain, Company Name, Employee Count, Funding Stage, Estimated ARR, Tech Stack, CS Headcount, Buyer Name, Buyer Title, Buyer Email, Email Verified</li>
+      <li>For each column, click the column header → select the enrichment source (Clay will suggest providers automatically)</li>
+      <li>Go to <strong>Settings → Integrations → Webhook</strong> → copy the webhook URL → paste it in your text file</li>
+    </ol>
+    <div class="callout">
+      The Clay webhook URL is what n8n will POST to when a new account needs enrichment. It will look like: <code>https://api.clay.com/v1/webhook/[random-id]</code>
+    </div>
+  </div>
+</div>
+
+<h2>Build Workflow 3 in n8n</h2>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 5.2</span> Build the Cluster Detector workflow</div>
+  <div class="step-body">
+    <p>Create a new workflow: <strong>Cluster Detector (Every 6h)</strong></p>
+    <div class="wf-flow">
+      <span class="wf-node">Schedule Trigger</span><span class="wf-arrow"> → </span>
+      <span class="wf-node">Google Sheets: Read Signal Log</span><span class="wf-arrow"> → </span>
+      <span class="wf-node">Code Node: group + count signals</span><span class="wf-arrow"> → </span>
+      <span class="wf-node">IF: 3+ signals?</span><span class="wf-arrow"> → </span>
+      <span class="wf-node">Google Sheets: Read Scored Accounts</span><span class="wf-arrow"> → </span>
+      <span class="wf-node">IF: new account?</span><span class="wf-arrow"> → </span>
+      <span class="wf-node">Google Sheets: Add to Scored Accounts</span><span class="wf-arrow"> → </span>
+      <span class="wf-node">HTTP: POST to Clay webhook</span>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 1</span> Schedule Trigger</div>
+      <div class="field-row"><div class="field-label">Trigger interval:</div><div class="field-val">Hours</div></div>
+      <div class="field-row"><div class="field-label">Hours between triggers:</div><div class="field-val">6</div></div>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 2</span> Google Sheets — Read Signal Log</div>
+      <div class="field-row"><div class="field-label">Operation:</div><div class="field-val">Get Many Rows</div></div>
+      <div class="field-row"><div class="field-label">Sheet:</div><div class="field-val">Signal Log</div></div>
+      <div class="field-row"><div class="field-label">Filters:</div><div class="field-val">Status = New</div></div>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 3</span> Code Node — Group Signals by Company</div>
+      <div class="field-row"><div class="field-label">Language:</div><div class="field-val">JavaScript</div></div>
+      <div class="field-row"><div class="field-label">Code to paste:</div><div class="field-val">See code block below ↓</div></div>
+    </div>
+
+    <pre><span class="comment">// Groups all signals by company domain
+// Returns only companies with 3+ signals within 21 days</span>
+const items = $input.all();
+const now = new Date();
+const cutoff = new Date(now - 21 * 24 * 60 * 60 * 1000); <span class="comment">// 21 days ago</span>
+
+const groups = {};
+for (const item of items) {
+  const domain = item.json['Company Domain'];
+  const date = new Date(item.json['Date']);
+  if (!domain || date < cutoff) continue;
+
+  if (!groups[domain]) {
+    groups[domain] = {
+      domain,
+      name: item.json['Company Name'],
+      signals: [],
+      types: new Set()
+    };
+  }
+  groups[domain].signals.push(item.json['Signal Summary']);
+  groups[domain].types.add(item.json['Signal Type']);
+}
+
+const clusters = Object.values(groups)
+  .filter(g => g.signals.length >= 3)
+  .map(g => ({
+    company_domain: g.domain,
+    company_name: g.name,
+    signal_count: g.signals.length,
+    signal_types: [...g.types].join(','),
+    signal_summaries: g.signals.join(' | ')
+  }));
+
+return clusters.map(c => ({ json: c }));</pre>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 4</span> HTTP Request — POST to Clay Webhook</div>
+      <div class="field-row"><div class="field-label">Method:</div><div class="field-val">POST</div></div>
+      <div class="field-row"><div class="field-label">URL:</div><div class="field-val">Your Clay webhook URL</div></div>
+      <div class="field-row"><div class="field-label">Body (JSON):</div><div class="field-val">
+        <code>{ "domain": "{{ $json.company_domain }}", "name": "{{ $json.company_name }}" }</code>
+      </div></div>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 5</span> Google Sheets — Append to Scored Accounts</div>
+      <div class="field-row"><div class="field-label">Operation:</div><div class="field-val">Append Row</div></div>
+      <div class="field-row"><div class="field-label">Sheet:</div><div class="field-val">Scored Accounts</div></div>
+      <div class="field-row"><div class="field-label">Map fields:</div><div class="field-val">
+        Date Flagged → <code>{{ $now.toISODate() }}</code><br>
+        Company Domain → <code>{{ $json.company_domain }}</code><br>
+        Company Name → <code>{{ $json.company_name }}</code><br>
+        Signal Count → <code>{{ $json.signal_count }}</code><br>
+        Signal Types → <code>{{ $json.signal_types }}</code><br>
+        Signal Summaries → <code>{{ $json.signal_summaries }}</code><br>
+        Status → <code>Pending Enrichment</code>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Phase 6 — Workflow 4: AI Scorer</h1>
+<p style="color:var(--mid)">⏱ 45 minutes · Triggered when Clay finishes enrichment</p>
+
+<p><strong>What this does:</strong> After Clay enriches an account (adds employee count, funding stage, tech stack, buyer info), n8n receives a notification from Clay, reads the enriched data, sends it to OpenRouter AI with the scoring rubric, gets a score back, and updates the Scored Accounts sheet with the result.</p>
+
+<div class="wf-flow">
+  <span class="wf-node">Webhook Trigger (from Clay)</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">Google Sheets: Read enriched account row</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">HTTP: OpenRouter AI (scoring)</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">Parse JSON score result</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">Google Sheets: Update score + tier</span><span class="wf-arrow"> → </span>
+  <span class="wf-node">IF Tier 1 or 2: trigger copy generation</span>
+</div>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 6.1</span> Create the AI Scorer workflow</div>
+  <div class="step-body">
+    <p>Create a new workflow: <strong>AI Scorer</strong></p>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 1</span> Webhook Trigger</div>
+      <div class="field-row"><div class="field-label">HTTP Method:</div><div class="field-val">POST</div></div>
+      <div class="field-row"><div class="field-label">Path:</div><div class="field-val"><code>clay-enrichment-done</code></div></div>
+      <p style="margin-top:8px;font-size:13px;">After creating this node, copy the webhook URL (shown in the node) → go to Clay → Settings → Integrations → Webhook → paste this URL as the "On completion" webhook.</p>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 2</span> HTTP Request — OpenRouter AI Scoring</div>
+      <div class="field-row"><div class="field-label">Method:</div><div class="field-val">POST</div></div>
+      <div class="field-row"><div class="field-label">URL:</div><div class="field-val"><code>https://openrouter.ai/api/v1/chat/completions</code></div></div>
+      <div class="field-row"><div class="field-label">Authentication:</div><div class="field-val">OpenRouter (credential you saved)</div></div>
+      <div class="field-row"><div class="field-label">Body (JSON):</div><div class="field-val">See the full prompt below ↓</div></div>
+    </div>
+
+    <pre>{
+  <span class="key">"model"</span>: <span class="str">"openai/gpt-oss-120b:free"</span>,
+  <span class="key">"response_format"</span>: { <span class="str">"type"</span>: <span class="str">"json_object"</span> },
+  <span class="key">"messages"</span>: [
+    {
+      <span class="key">"role"</span>: <span class="str">"system"</span>,
+      <span class="key">"content"</span>: <span class="str">"You are a GTM scoring engine. Score the account using the rubric provided. Return ONLY a JSON object with fields: firmographic_score (0-40), signal_score (0-45), tech_score (0-15), total_score (0-100), tier (Tier 1, Tier 2, Tier 3, or Discard), reasoning (1 sentence)."</span>
+    },
+    {
+      <span class="key">"role"</span>: <span class="str">"user"</span>,
+      <span class="key">"content"</span>: <span class="str">"Score this account:\n\nCompany: {{$json.company_name}}\nDomain: {{$json.company_domain}}\nEmployees: {{$json.employee_count}}\nFunding Stage: {{$json.funding_stage}}\nEstimated ARR: {{$json.estimated_arr}}\nCS Headcount: {{$json.cs_headcount}}\nTech Stack: {{$json.tech_stack}}\nSignals fired: {{$json.signal_types}}\nSignal summaries: {{$json.signal_summaries}}\n\nSCORING RUBRIC:\nFIRMOGRAPHIC FIT (max 40):\n- Employees 500+: 20pts (200-499: 15pts, 100-199: 8pts)\n- Series C+: 15pts (Series B: 10pts)\n- ARR $100M+: 15pts ($50-100M: 8pts)\n- CS team 10+: 10pts (5-9: 5pts)\n\nSIGNAL STRENGTH (max 45):\n- Public earnings/investor churn statement: 20pts\n- G2 review: forecast or surprise churn: 15pts\n- CRO/VP CS LinkedIn post NRR pain: 15pts\n- Director+ CS or RevOps hire: 10pts\n- Job posting CS platform migration: 10pts\n- Each extra signal beyond 3: +5pts\n\nTECH STACK FIT (max 15):\n- Uses Gainsight or ChurnZero: 10pts\n- Uses Segment/Amplitude/Mixpanel/Heap: 5pts\n- Uses Salesforce: 5pts\n\nTIERS: Tier 1=80+, Tier 2=60-79, Tier 3=40-59, Discard=below 40"</span>
+    }
+  ]
+}</pre>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 3</span> Google Sheets — Update Scored Account</div>
+      <div class="field-row"><div class="field-label">Operation:</div><div class="field-val">Update Row</div></div>
+      <div class="field-row"><div class="field-label">Match by:</div><div class="field-val">Company Domain column</div></div>
+      <div class="field-row"><div class="field-label">Fields to update:</div><div class="field-val">
+        Firmographic Score → <code>{{ $json.choices[0].message.content.firmographic_score }}</code><br>
+        Signal Score → <code>{{ $json.choices[0].message.content.signal_score }}</code><br>
+        Tech Score → <code>{{ $json.choices[0].message.content.tech_score }}</code><br>
+        Total Score → <code>{{ $json.choices[0].message.content.total_score }}</code><br>
+        Tier → <code>{{ $json.choices[0].message.content.tier }}</code><br>
+        Status → <code>Scored</code>
+      </div></div>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 4</span> IF — Is this Tier 1 or Tier 2?</div>
+      <div class="field-row"><div class="field-label">Condition:</div><div class="field-val">Tier contains "Tier 1" OR Tier contains "Tier 2"</div></div>
+      <div class="field-row"><div class="field-label">True path:</div><div class="field-val">Continue to Workflow 5 (Copy Generator)</div></div>
+      <div class="field-row"><div class="field-label">False path:</div><div class="field-val">Stop (Tier 3 and Discard go nowhere)</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Phase 7 — Workflow 5: Email Copy Generator</h1>
+<p style="color:var(--mid)">⏱ 45 minutes · Triggered by AI Scorer for Tier 1 + 2</p>
+
+<p><strong>What this does:</strong> For every Tier 1 or Tier 2 account, calls OpenRouter AI with the signal data and the company's buyer information to write a personalized, signal-grounded outbound email. Writes the draft to your Review Queue tab.</p>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 7.1</span> Create the Copy Generator workflow</div>
+  <div class="step-body">
+    <p>Create a new workflow: <strong>Email Copy Generator</strong></p>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 1</span> Webhook Trigger (called by AI Scorer Workflow)</div>
+      <div class="field-row"><div class="field-label">Path:</div><div class="field-val"><code>generate-email-copy</code></div></div>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 2</span> HTTP Request — OpenRouter AI Copy Generation</div>
+      <div class="field-row"><div class="field-label">URL:</div><div class="field-val"><code>https://openrouter.ai/api/v1/chat/completions</code></div></div>
+      <div class="field-row"><div class="field-label">Authentication:</div><div class="field-val">OpenRouter</div></div>
+      <div class="field-row"><div class="field-label">Body (JSON):</div><div class="field-val">See prompt below ↓</div></div>
+    </div>
+
+<pre>{
+  <span class="key">"model"</span>: <span class="str">"openrouter/owl-alpha:free"</span>,
+  <span class="key">"messages"</span>: [
+    {
+      <span class="key">"role"</span>: <span class="str">"system"</span>,
+      <span class="key">"content"</span>: <span class="str">"You are a senior GTM engineer at QuadSci writing cold outbound email for a specific qualified account. Write an email that a CRO would actually reply to — not because it is clever, but because it proves you know exactly what they are dealing with right now.\n\nRules:\n- Never use 'I hope this finds you well', 'I know you are busy', or 'just checking in'\n- No bullet points in the email body\n- Tone is peer-to-peer — not sales rep to prospect\n- Under 180 words total\n- One CTA: a 20-minute call\n- Open with the strongest signal\n- Weave all signals naturally — do not list them\n- Close with: surprise churn is a visibility problem; telemetry arrives 12 months early\n- Use ONLY these QuadSci facts (invent nothing else):\n  * Predicts churn 12 months before renewal with 94% accuracy\n  * Ingests raw product telemetry — not CRM data\n  * Clari: 6B+ telemetry signals, 94% churn accuracy 12 months out, 80% of contractions spotted 6 months ahead\n  * Self-hosted: customer data never leaves their environment"</span>
+    },
+    {
+      <span class="key">"role"</span>: <span class="str">"user"</span>,
+      <span class="key">"content"</span>: <span class="str">"Write a cold outbound email.\n\nBuyer: {{$json.buyer_name}}, {{$json.buyer_title}} at {{$json.company_name}} ({{$json.funding_stage}} B2B SaaS, ~{{$json.employee_count}} employees, ~{{$json.estimated_arr}} ARR).\n\nSignals fired on this account in the last 21 days:\n{{$json.signal_summaries}}\n\nKnown tech stack: {{$json.tech_stack}}\n\nScore: {{$json.total_score}}/100 ({{$json.tier}})\n\nWrite the email now. Subject line first, then the body."</span>
+    }
+  ]
+}</pre>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 3</span> Google Sheets — Append to Review Queue</div>
+      <div class="field-row"><div class="field-label">Sheet:</div><div class="field-val">Review Queue</div></div>
+      <div class="field-row"><div class="field-label">Map fields:</div><div class="field-val">
+        Date Added → today<br>
+        Company Name → from input<br>
+        Buyer Name → from input<br>
+        Buyer Title → from input<br>
+        Buyer Email → from input<br>
+        Tier → from input<br>
+        Total Score → from input<br>
+        Signal Summary → from input<br>
+        Generated Email → <code>{{ $json.choices[0].message.content }}</code><br>
+        Your Action → (leave blank — you fill this)
+      </div></div>
+    </div>
+
+    <div class="callout callout-amber">
+      ⚠️ <strong>Important — Review Gate:</strong> The workflow stops here for Tier 1 accounts. You must open the Review Queue tab in Google Sheets, read the email draft, and type APPROVE in the "Your Action" column. Workflow 6 checks for this every 15 minutes and will then send it.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Phase 8 — Workflow 6: Approval Queue Monitor + Send</h1>
+<p style="color:var(--mid)">⏱ 30 minutes · Checks for approvals every 15 minutes</p>
+
+<p><strong>What this does:</strong> Every 15 minutes, reads the Review Queue sheet. If it finds a row where you typed APPROVE (and the email hasn't been sent yet), it sends the email via Gmail and updates the status.</p>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 8.1</span> Build the Approval Monitor workflow</div>
+  <div class="step-body">
+    <p>Create a new workflow: <strong>Approval Queue Monitor</strong></p>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 1</span> Schedule Trigger</div>
+      <div class="field-row"><div class="field-label">Trigger interval:</div><div class="field-val">Minutes</div></div>
+      <div class="field-row"><div class="field-label">Minutes between triggers:</div><div class="field-val">15</div></div>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 2</span> Google Sheets — Read Review Queue</div>
+      <div class="field-row"><div class="field-label">Operation:</div><div class="field-val">Get Many Rows</div></div>
+      <div class="field-row"><div class="field-label">Sheet:</div><div class="field-val">Review Queue</div></div>
+      <div class="field-row"><div class="field-label">Filter — Column J (Your Action):</div><div class="field-val">equals APPROVE</div></div>
+      <div class="field-row"><div class="field-label">Filter — Column L (Send Date):</div><div class="field-val">is empty (not yet sent)</div></div>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 3</span> IF — Did we find any approved rows?</div>
+      <div class="field-row"><div class="field-label">Condition:</div><div class="field-val">Number of items is greater than 0</div></div>
+      <div class="field-row"><div class="field-label">False path:</div><div class="field-val">Stop (nothing to send)</div></div>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 4</span> Gmail — Send Email</div>
+      <div class="field-row"><div class="field-label">Credential:</div><div class="field-val">Gmail - QuadSci Outbound</div></div>
+      <div class="field-row"><div class="field-label">To:</div><div class="field-val"><code>{{ $json['Buyer Email'] }}</code></div></div>
+      <div class="field-row"><div class="field-label">Subject:</div><div class="field-val"><code>{{ $json['Generated Email'].split('\n')[0].replace('Subject: ','') }}</code></div></div>
+      <div class="field-row"><div class="field-label">Message:</div><div class="field-val"><code>{{ $json['Your Notes'] || $json['Generated Email'].split('\n').slice(2).join('\n') }}</code><br><em>(Uses your edited version if you wrote one in "Your Notes", otherwise uses the AI draft)</em></div></div>
+    </div>
+
+    <div class="node-block">
+      <div class="node-name"><span class="n-type">NODE 5</span> Google Sheets — Update Send Date</div>
+      <div class="field-row"><div class="field-label">Operation:</div><div class="field-val">Update Row</div></div>
+      <div class="field-row"><div class="field-label">Column L (Send Date):</div><div class="field-val"><code>{{ $now.toISODate() }}</code></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Phase 9 — Set Up Apollo Sequences (One-Time, Manual)</h1>
+<p style="color:var(--mid)">⏱ 30 minutes · Do this once. Tier 2 accounts get added here.</p>
+
+<p>Apollo.io handles the follow-up sequence for Tier 2 accounts (score 60–79). You'll create 2 sequences manually in Apollo's web UI. Once created, they run on autopilot.</p>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 9.1</span> Create Sequence 1 — Tier 2 (VP CS Primary)</div>
+  <div class="step-body">
+    <ol>
+      <li>Log into apollo.io → click <strong>Sequences</strong> in the left menu → <strong>+ New Sequence</strong></li>
+      <li>Name it: <strong>QuadSci Tier 2 — VP CS</strong></li>
+      <li>Add Step 1: Email → Timing: Send immediately → Subject + Body: leave blank for now (you'll add contacts with their specific email drafted by the AI)</li>
+      <li>Add Step 2: Email → Timing: 3 days after Step 1 → Subject: "Re: [company] renewal visibility" → Body: "Following up — curious if the renewal forecasting challenge I mentioned resonated. Happy to show you 15 minutes of how Clari uses telemetry signals to predict this 12 months out."</li>
+      <li>Add Step 3: Email → Timing: 7 days after Step 2 → Body: "Last note from me — if the timing isn't right, no issue at all. If renewal visibility comes back as a priority, I'd value 20 minutes."</li>
+      <li>Click <strong>Save</strong></li>
+    </ol>
+  </div>
+</div>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">STEP 9.2</span> Create Sequence 2 — Tier 2 (VP RevOps Primary)</div>
+  <div class="step-body">
+    <p>Repeat the above with the same 3-step structure but targeting a RevOps buyer:</p>
+    <ul>
+      <li>Name: <strong>QuadSci Tier 2 — VP RevOps</strong></li>
+      <li>Follow-up 2 body: "Following up — if the forecasting accuracy gap I mentioned is something RevOps owns, I'd value 15 minutes to show you what telemetry-based prediction looks like vs. CRM-based."</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout">
+  <strong>How you'll add Tier 2 contacts to sequences:</strong> When a Tier 2 email is approved and sent, you'll go to Apollo, find the contact by email (or add them), and click "Add to Sequence." This takes 30 seconds per contact. Apollo handles all follow-ups from there automatically.
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Phase 10 — End-to-End Test</h1>
+<p style="color:var(--mid)">⏱ 60 minutes · Use fake data to test every stage works</p>
+
+<p>Before going live, test the full pipeline with a fake account. This catches any broken connections before real signals flow through.</p>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">TEST 1</span> Manually add a fake signal to your Signal Log</div>
+  <div class="step-body">
+    <p>Open your Google Sheet → Signal Log tab → add this row manually:</p>
+    <table>
+      <tr><th>Column</th><th>Value to type</th></tr>
+      <tr><td>Date</td><td>Today's date</td></tr>
+      <tr><td>Company Domain</td><td>testcompany.com</td></tr>
+      <tr><td>Company Name</td><td>Test Company Inc</td></tr>
+      <tr><td>Signal Type</td><td>2</td></tr>
+      <tr><td>Signal Summary</td><td>G2 review: Gainsight renewal forecasts are always wrong — 3 surprise churns last quarter</td></tr>
+      <tr><td>Source URL</td><td>https://g2.com/test</td></tr>
+      <tr><td>Status</td><td>New</td></tr>
+    </table>
+    <p>Add 2 more rows for the same domain with different signal types (3 and 4) and different summaries. You need 3 rows with the same domain to trigger the cluster.</p>
+  </div>
+</div>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">TEST 2</span> Manually run the Cluster Detector workflow</div>
+  <div class="step-body">
+    <p>In n8n, open the <strong>Cluster Detector</strong> workflow → click <strong>Execute Workflow</strong> (the play button).</p>
+    <div class="callout callout-green">
+      ✅ <strong>Expected result:</strong> A new row appears in your Scored Accounts tab with Status = "Pending Enrichment." If you see this, the cluster detection worked.
+    </div>
+    <div class="callout callout-red">
+      ❌ <strong>If nothing appears:</strong> Go back to the Code Node in the Cluster Detector and check that the company domain in your Signal Log matches across all 3 rows exactly (even one extra space will break it).
+    </div>
+  </div>
+</div>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">TEST 3</span> Manually fill in fake enrichment data</div>
+  <div class="step-body">
+    <p>Since the Clay webhook is hard to test with a fake domain, manually fill in the Scored Accounts row you just created:</p>
+    <ul>
+      <li>Employee Count: 350</li>
+      <li>Funding Stage: Series C</li>
+      <li>Estimated ARR: $140M</li>
+      <li>Tech Stack: Gainsight, Salesforce, Segment</li>
+      <li>CS Headcount: 22</li>
+      <li>Buyer Name: Sarah Chen</li>
+      <li>Buyer Title: CRO</li>
+      <li>Buyer Email: sarah.chen@testcompany.com</li>
+      <li>Email Verified: YES</li>
+      <li>Status: Enriched</li>
+    </ul>
+    <p>Then manually trigger the AI Scorer webhook by clicking <strong>Execute Workflow</strong> in n8n with this data.</p>
+  </div>
+</div>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">TEST 4</span> Verify the score and email draft appear</div>
+  <div class="step-body">
+    <p>After running the AI Scorer workflow, check:</p>
+    <div class="test-check"><div class="box"></div><p>The Scored Accounts tab shows a score (should be around 70-85 for the test data you entered)</p></div>
+    <div class="test-check"><div class="box"></div><p>A Tier is assigned (Tier 1 or 2 for these numbers)</p></div>
+    <div class="test-check"><div class="box"></div><p>The Review Queue tab has a new row with a full email draft in column I</p></div>
+    <div class="test-check"><div class="box"></div><p>The email draft mentions "Sarah Chen" and references the G2 review signal you entered</p></div>
+    <div class="test-check"><div class="box"></div><p>The email does NOT invent any QuadSci facts (check that all metrics match: 94%, 12 months, Clari)</p></div>
+  </div>
+</div>
+
+<div class="step-box">
+  <div class="step-num"><span class="badge badge-purple">TEST 5</span> Test the Approval + Send flow</div>
+  <div class="step-body">
+    <p>In your Review Queue tab, type <strong>APPROVE</strong> in the "Your Action" column (column J) for the test row. Then in n8n, run the <strong>Approval Queue Monitor</strong> workflow manually.</p>
+    <div class="callout callout-amber">
+      ⚠️ <strong>Important:</strong> Change the Buyer Email in the test row to YOUR OWN email address before running this test. Otherwise it will try to send to the fake email.
+    </div>
+    <div class="callout callout-green">
+      ✅ <strong>Expected result:</strong> You receive a test email in your inbox. Check that the subject line and body are correct. The Send Date column in Google Sheets should be filled in automatically.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Phase 11 — Activate All Workflows and Go Live</h1>
+<p style="color:var(--mid)">⏱ 30 minutes · Flip the switches on all 6 workflows</p>
+
+<p>Once your end-to-end test passes, activate all workflows so they run on their own schedule.</p>
+
+<table>
+  <tr><th>WORKFLOW NAME</th><th>HOW TO ACTIVATE</th><th>WHEN IT RUNS</th></tr>
+  <tr>
+    <td><strong>Signal Collector (Daily)</strong></td>
+    <td>Open in n8n → toggle switch in top-right corner to ON</td>
+    <td>Every day at 7:00 AM</td>
+  </tr>
+  <tr>
+    <td><strong>Apify Scraper (Weekly)</strong></td>
+    <td>Toggle ON</td>
+    <td>Every Monday at 9:00 AM</td>
+  </tr>
+  <tr>
+    <td><strong>Cluster Detector (Every 6h)</strong></td>
+    <td>Toggle ON</td>
+    <td>Every 6 hours (12am, 6am, 12pm, 6pm)</td>
+  </tr>
+  <tr>
+    <td><strong>AI Scorer</strong></td>
+    <td>Toggle ON (always listening for Clay webhook)</td>
+    <td>Triggered automatically when Clay enrichment completes</td>
+  </tr>
+  <tr>
+    <td><strong>Email Copy Generator</strong></td>
+    <td>Toggle ON (always listening for AI Scorer webhook)</td>
+    <td>Triggered automatically after scoring</td>
+  </tr>
+  <tr>
+    <td><strong>Approval Queue Monitor</strong></td>
+    <td>Toggle ON</td>
+    <td>Every 15 minutes</td>
+  </tr>
+</table>
+
+<div class="callout callout-green">
+  ✅ <strong>Congratulations — the system is live.</strong> The first real signals should start appearing in your Signal Log within 24 hours. Your first cluster (3+ signals from the same company) may take 2–7 days depending on signal volume in the market.
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Your Daily Routine (20–30 Minutes)</h1>
+
+<p>After go-live, your only job is this:</p>
+
+<ol>
+  <li><strong>Open Google Sheets → Review Queue tab</strong></li>
+  <li><strong>Read each email draft</strong> — check that the AI didn't invent any facts, that the signal references are accurate, and that the tone sounds like a peer, not a salesperson</li>
+  <li><strong>Type APPROVE, REJECT, or EDIT</strong> in Column J. If you edit, paste your version in Column K</li>
+  <li><strong>Done.</strong> The Approval Queue Monitor will pick up your approvals within 15 minutes and send them</li>
+</ol>
+
+<div class="callout callout-amber">
+  ⚠️ <strong>Always fact-check before approving:</strong> The AI occasionally misquotes numbers. Before approving any email, verify: (1) all QuadSci metrics match 94% accuracy / 12-month lead time / Clari case study, and (2) the signal references actually happened (you can check the source URL in your Signal Log).
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>First 7 Days — What to Expect</h1>
+
+<table>
+  <tr><th>DAY</th><th>WHAT YOU SHOULD SEE</th><th>WHAT TO DO IF YOU DON'T</th></tr>
+  <tr>
+    <td><strong>Day 1</strong></td>
+    <td>Signal Log starts filling with rows from Google Alerts. May be noisy at first — many signals won't match your ICP yet.</td>
+    <td>Check that Google Alerts RSS URLs are valid. Open one in your browser — you should see XML content.</td>
+  </tr>
+  <tr>
+    <td><strong>Day 2–3</strong></td>
+    <td>Some signals will have matching company domains. Start manually adding the company domain to signals where n8n couldn't extract it automatically.</td>
+    <td>If no signals appear at all, check the n8n workflow execution log for errors (in n8n, click the workflow → Executions tab).</td>
+  </tr>
+  <tr>
+    <td><strong>Day 3–5</strong></td>
+    <td>First cluster trigger. A row appears in Scored Accounts with Status "Pending Enrichment." Clay processes it and fills in firmographic data.</td>
+    <td>If Clay doesn't enrich: check that the Clay webhook URL in n8n matches the one in Clay's settings. Re-copy and repaste.</td>
+  </tr>
+  <tr>
+    <td><strong>Day 5–7</strong></td>
+    <td>First email draft appears in Review Queue. Read it carefully. Approve your first real send.</td>
+    <td>If email draft looks generic (no signal references): the OpenRouter model may have ignored the signal summaries. Check that the signal_summaries field is populated in the Scored Accounts row.</td>
+  </tr>
+  <tr>
+    <td><strong>Week 2+</strong></td>
+    <td>Steady flow: 3–8 new signals/day, 1–3 cluster triggers/week, 1–2 email drafts/week in the queue.</td>
+    <td>If signal volume is too low: add more Google Alerts with slightly broader keywords. If too high and noisy: tighten the keyword filters in the n8n IF nodes.</td>
+  </tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Appendix A — All Copy-Paste Prompts</h1>
+
+<h2>Scoring Prompt (for OpenRouter AI Scorer workflow)</h2>
+<div class="prompt-box">
+  <span class="prompt-label">SYSTEM</span>
+  <div class="prompt-text">You are a GTM scoring engine. Score the account using the rubric provided. Return ONLY a JSON object with these exact fields:
+{
+  "firmographic_score": (0-40),
+  "signal_score": (0-45),
+  "tech_score": (0-15),
+  "total_score": (0-100),
+  "tier": "Tier 1" | "Tier 2" | "Tier 3" | "Discard",
+  "reasoning": "one sentence explaining the tier"
+}</span>
+</div>
+
+<h2>Email Copy Prompt (for OpenRouter Copy Generator workflow)</h2>
+<div class="prompt-box">
+  <span class="prompt-label">SYSTEM</span>
+  <div class="prompt-text">You are a senior GTM engineer at QuadSci writing cold outbound email for a specific qualified account. Write an email that a CRO would actually reply to — not because it is clever, but because it proves you know exactly what they are dealing with right now.
+
+Rules:
+- Never use "I hope this finds you well," "I know you are busy," or "just checking in"
+- No bullet points in the email body
+- Tone is peer-to-peer — not sales rep to prospect
+- Under 180 words total
+- One CTA: a 20-minute call
+- Open with the strongest signal
+- Weave all signals naturally — do not list them
+- Close with: surprise churn is a visibility problem; telemetry arrives 12 months early
+
+Use ONLY these QuadSci facts (invent nothing else):
+- Predicts churn 12 months before renewal with 94% accuracy
+- Ingests raw product telemetry — not CRM data. That distinction matters.
+- Clari: 6B+ telemetry signals, 94% churn accuracy 12 months out, 80% of contractions spotted 6 months ahead
+- Self-hosted: customer data never leaves their environment
+
+Output format:
+Subject: [subject line]
+
+[email body starting with buyer's first name]</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Appendix B — Common Errors and Fixes</h1>
+
+<table>
+  <tr><th>ERROR YOU SEE</th><th>WHAT WENT WRONG</th><th>FIX</th></tr>
+  <tr>
+    <td>"Invalid credentials" on Google Sheets node</td>
+    <td>Google OAuth token expired</td>
+    <td>In n8n → Credentials → Google Sheets → click "Reconnect" → re-authorize with Google</td>
+  </tr>
+  <tr>
+    <td>OpenRouter returns 401 error</td>
+    <td>API key is wrong or missing "Bearer " prefix</td>
+    <td>In n8n → Credentials → OpenRouter → check Header Value starts with "Bearer " (with space) before your key</td>
+  </tr>
+  <tr>
+    <td>Cluster Detector finds no clusters despite signals in the sheet</td>
+    <td>Company Domain field is blank or inconsistent</td>
+    <td>Check Signal Log — make sure Column B (Company Domain) has the same exact text across all rows for the same company. Even a space or capital letter difference breaks the grouping.</td>
+  </tr>
+  <tr>
+    <td>Clay doesn't enrich after receiving the webhook</td>
+    <td>Clay webhook URL changed or table not set up correctly</td>
+    <td>Go to clay.com → your table → Settings → copy the webhook URL again → paste into the n8n Clay webhook HTTP node</td>
+  </tr>
+  <tr>
+    <td>AI email contains made-up QuadSci statistics</td>
+    <td>Model invented facts not in the prompt</td>
+    <td>This is why the review gate exists. Reject the email. Add the incorrect fact to the system prompt as "NEVER say [incorrect fact]" to train the next run.</td>
+  </tr>
+  <tr>
+    <td>Apify returns 0 results</td>
+    <td>LinkedIn blocked the scraper or rate-limited</td>
+    <td>This happens occasionally. Wait until next Monday's scheduled run. If persistent, try a different Apify Actor (search "LinkedIn Jobs" in Apify Store for alternatives).</td>
+  </tr>
+  <tr>
+    <td>Gmail sends from wrong address</td>
+    <td>Gmail OAuth is connected to a personal account, not the outbound account</td>
+    <td>In n8n → Credentials → Gmail → reconnect with the correct Google account (the one you want to send from)</td>
+  </tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h1>Appendix C — Scale-Up Plan (When You're Ready)</h1>
+
+<p>Once the system runs for 30 days and you've confirmed it generates qualified accounts, here's when to invest in paid tools and what each purchase unlocks:</p>
+
+<table>
+  <tr><th>WHEN TO UPGRADE</th><th>WHAT TO BUY</th><th>WHAT IT UNLOCKS</th><th>MONTHLY COST</th></tr>
+  <tr>
+    <td>Month 2 — if Clay free credits are exhausted before month-end</td>
+    <td>Clay Starter</td>
+    <td>1,000 credits/month (~100 fully enriched accounts)</td>
+    <td>$149/mo</td>
+  </tr>
+  <tr>
+    <td>Month 2 — if n8n.cloud trial ends and workflow is generating value</td>
+    <td>n8n.cloud Starter</td>
+    <td>Unlimited workflows, no trial limit</td>
+    <td>$20/mo</td>
+  </tr>
+  <tr>
+    <td>Month 3 — if Tier 2 account volume exceeds 2 sequences</td>
+    <td>Apollo.io Basic</td>
+    <td>Full API access (automate sequence enrollment from n8n) + unlimited sequences</td>
+    <td>$49/mo</td>
+  </tr>
+  <tr>
+    <td>Month 3+ — if signal coverage is insufficient</td>
+    <td>LinkedIn Sales Navigator</td>
+    <td>Real-time job change + hiring alerts; person-level LinkedIn signals at scale</td>
+    <td>$99/mo</td>
+  </tr>
+  <tr>
+    <td colspan="3"><strong>Total at full scale (still lean):</strong></td>
+    <td><strong>~$317/mo</strong></td>
+  </tr>
+</table>
+
+<div class="callout callout-green">
+  ✅ One closed deal at QuadSci's ACV pays for 3+ years of this full paid stack. The $0 free tier version you're building today is the exact same workflow — just with volume limits.
+</div>
+
+<br><br>
+<div style="text-align:center;color:#9CA3AF;font-size:12px;border-top:1px solid #E2E8F0;padding-top:24px;">
+  QuadSci GTM Autopilot Build Roadmap · Principal Systems Architect · May 2026 · Total build time: 1 day · Total cost: $0/month
+</div>
+
+</div>
+</body>
+</html>

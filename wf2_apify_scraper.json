@@ -1,0 +1,237 @@
+{
+  "name": "WF2 — HN Buyer-Intent Signal Collector (Monday 9am)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "ebfe75a7-a2b1-48d9-8747-a0a6271ef719",
+      "name": "Schedule Trigger — Monday 9am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://hn.algolia.com/api/v1/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "(Gainsight) "
+            },
+            {
+              "name": "tags",
+              "value": "story"
+            },
+            {
+              "name": "hitsPerPage",
+              "value": "50"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "13718056-e72a-496d-baeb-53c69fe86409",
+      "name": "HN Algolia — Search Buyer-Intent Stories",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "notes": "Free, no-auth HN search via Algolia. Replaces the original Apify LinkedIn jobs scraper, which depended on a non-existent actor (apify/linkedin-jobs-scraper) and would have required a paid actor + brittle anti-bot handling. HN posts mentioning churn/Gainsight/CS-Ops migrations are higher-intent buyer signal than tangential job postings."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize HN Algolia search results into Signal Log row format.\n// Algolia returns { hits: [ {title, url, author, story_text, created_at, objectID, ...} ] }\n// We filter to ICP-relevant posts, extract a best-effort company domain, and emit one row per hit.\n\nconst payload = $input.first().json;\nconst hits = Array.isArray(payload.hits) ? payload.hits : [];\nconst today = new Date().toISOString().split('T')[0];\n\n// ICP keyword whitelist — second-pass filter (Algolia query is broad; this tightens it)\nconst keywords = [\n  'gainsight', 'churnzero', 'totango', 'planhat',\n  'renewal', 'revops', 'revenue operations',\n  'customer success operations', 'cs ops', 'cs-ops',\n  'nrr', 'gross retention', 'net retention',\n  'churn prediction', 'churn intelligence',\n  'expansion revenue', 'product telemetry'\n];\n\n// Domain extraction: parse hostname from URL field.\n// Many HN posts link to a company blog or product page, which is the strongest domain signal.\n// If no URL (Ask HN, Show HN with no link), domain is left blank — WF3 will skip rows with empty domain,\n// and the row remains in Signal Log as triage material for manual review.\nfunction extractDomain(url) {\n  if (!url) return '';\n  try {\n    return String(url)\n      .trim()\n      .toLowerCase()\n      .replace(/^https?:\\/\\//, '')\n      .replace(/^www\\./, '')\n      .split('/')[0]\n      .split('?')[0]\n      .split('#')[0];\n  } catch {\n    return '';\n  }\n}\n\n// Best-effort company name from the domain (everything before the first dot, title-cased)\nfunction inferCompanyName(domain) {\n  if (!domain) return '';\n  const root = domain.split('.')[0];\n  return root.charAt(0).toUpperCase() + root.slice(1);\n}\n\nreturn hits\n  .filter(hit => {\n    const text = ((hit.title || '') + ' ' + (hit.story_text || '')).toLowerCase();\n    return keywords.some(kw => text.includes(kw));\n  })\n  .map(hit => {\n    const sourceUrl = hit.url || ('https://news.ycombinator.com/item?id=' + hit.objectID);\n    const domain = extractDomain(hit.url);\n    return {\n      json: {\n        'Date': today,\n        'Company Domain': domain,\n        'Company Name': inferCompanyName(domain),\n        'Signal Type': '1',\n        'Signal Summary': '[HN Discussion] ' + (hit.title || '').slice(0, 200),\n        'Source URL': sourceUrl,\n        'Status': 'New'\n      }\n    };\n  })\n  .filter(item => item.json['Company Domain']);"
+      },
+      "id": "263919e9-bb04-4b09-ac8a-69a4b38ee64d",
+      "name": "Normalize HN Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Signal Log",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company Domain",
+              "displayName": "Company Domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Signal Type",
+              "displayName": "Signal Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Signal Summary",
+              "displayName": "Signal Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Source URL",
+              "displayName": "Source URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "356cfc6f-e742-440a-a27d-f2b63e5fa725",
+      "name": "Google Sheets — Append to Signal Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        720,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "mCitxoRY2r1cdcjh",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger — Monday 9am": {
+      "main": [
+        [
+          {
+            "node": "HN Algolia — Search Buyer-Intent Stories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HN Algolia — Search Buyer-Intent Stories": {
+      "main": [
+        [
+          {
+            "node": "Normalize HN Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize HN Results": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets — Append to Signal Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "8a74d2a8-e638-425c-90de-5d5318bc69ca",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2937f53cf7d4f752601b86a3c3b2ce9edd949a058b20d977b6b8328c69cff778"
+  },
+  "id": "haDq9ZclSJyhlUfu",
+  "tags": [
+    {
+      "updatedAt": "2026-05-25T23:16:57.705Z",
+      "createdAt": "2026-05-25T23:16:57.705Z",
+      "id": "lRKTKUtOG1wLcOi4",
+      "name": "quadsci"
+    }
+  ]
+}

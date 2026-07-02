@@ -1,0 +1,749 @@
+{
+  "name": "WF1 New — Signal Collector (Daily 7am)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "id": "6130e2dd-880e-4796-a528-5d743f8f27d5",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        544,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.google.com/alerts/feeds/01178061537733632567/12015288344805864889",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "c72da019-8583-442e-a463-caad9ddf40e3",
+      "name": "HTTP Alert 1 — Job Postings",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        784,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "78a96fae-7683-4229-aa43-f7b38a0e72a7",
+      "name": "XML Parse 1",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const root = $input.first().json;\nconst feed = root.feed || root.data?.feed || root.rss || root.data?.rss || {};\nconst items = feed.entry || feed.channel?.item || [];\nconst arr = Array.isArray(items) ? items : (items ? [items] : []);\nconst today = new Date().toISOString().split('T')[0];\n\nreturn arr.filter(e => e).map(entry => ({\n  json: {\n    'Date': today,\n    'Company Domain': '',\n    'Company Name': '',\n    'Signal Type': '1',\n    'Signal Summary': String(entry.title || entry.title?.[0] || '')\n      .replace(/<[^>]+>/g, '')\n      .trim(),\n    'Source URL': String(\n      entry.link?.href ||\n      entry.link?.[0]?.$?.href ||\n      entry.link?.[0] ||\n      entry.link ||\n      ''\n    ).trim(),\n    'Status': 'New'\n  }\n}));"
+      },
+      "id": "bc866286-aa02-4a22-a497-68a3230c6b6f",
+      "name": "Normalize Alert 1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        608
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "https://www.google.com/alerts/feeds/01178061537733632567/11838967156830136346",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "f5150a8d-76b9-45d9-8d0f-6abfe6b55a05",
+      "name": "HTTP Alert 2 — G2 Reviews",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        784,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a713102b-6696-4601-8988-30498ed7096a",
+      "name": "XML Parse 2",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract items from Google Alerts RSS feed — Signal Type 2 (G2 Reviews)\nconst feed = $input.first().json.data;\nconst items = feed?.rss?.channel?.item || feed?.feed?.entry || [];\nconst arr = Array.isArray(items) ? items : [items];\nconst today = new Date().toISOString().split('T')[0];\n\nreturn arr.filter(e => e).map(entry => ({\n  json: {\n    'Date': today,\n    'Company Domain': '',\n    'Company Name': '',\n    'Signal Type': '2',\n    'Signal Summary': (entry.title?.[0] ?? entry.title ?? '').toString().replace(/<[^>]+>/g, '').trim(),\n    'Source URL': (entry.link?.[0]?.$ ? entry.link[0].$.href : entry.link?.[0] ?? entry.link ?? '').toString().trim(),\n    'Status': 'New'\n  }\n}));"
+      },
+      "id": "92bd8228-9bc8-4298-a808-5a4b6bd5b6b5",
+      "name": "Normalize Alert 2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        768
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "fe29087d-522b-49e6-9f83-31f53bb0d880",
+      "name": "XML Parse 3",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        576,
+        1520
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $input.first().json.organic_results || [];\nconst today = new Date().toISOString().split('T')[0];\n\nreturn results\n  .filter(r => r && r.title && r.link)\n  .map(r => ({\n    json: {\n      'Date': today,\n      'Company Domain': '',\n      'Company Name': '',\n      'Signal Type': '3',\n      'Signal Summary': (`[NRR] ${r.title}${r.snippet ? ' — ' + r.snippet : ''}`)\n        .replace(/<[^>]+>/g, '')\n        .trim()\n        .slice(0, 500),\n      'Source URL': String(r.link).trim(),\n      'Status': 'New'\n    }\n  }));"
+      },
+      "id": "2d1cf6f7-eb9b-4508-9ad2-11ae854c579e",
+      "name": "Normalize Alert 3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        928
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "https://www.google.com/alerts/feeds/01178061537733632567/5558181014363288971",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "3d39c860-e676-4d0f-953c-877313cc540d",
+      "name": "HTTP Alert 4 — Leadership Hires",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        784,
+        1088
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "abfc734c-d147-4182-bc64-d2c82b096324",
+      "name": "XML Parse 4",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        1088
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract items from Google Alerts RSS feed — Signal Type 4 (Leadership Hires)\nconst feed = $input.first().json.data;\nconst items = feed?.rss?.channel?.item || feed?.feed?.entry || [];\nconst arr = Array.isArray(items) ? items : [items];\nconst today = new Date().toISOString().split('T')[0];\n\nreturn arr.filter(e => e).map(entry => ({\n  json: {\n    'Date': today,\n    'Company Domain': '',\n    'Company Name': '',\n    'Signal Type': '4',\n    'Signal Summary': (entry.title?.[0] ?? entry.title ?? '').toString().replace(/<[^>]+>/g, '').trim(),\n    'Source URL': (entry.link?.[0]?.$ ? entry.link[0].$.href : entry.link?.[0] ?? entry.link ?? '').toString().trim(),\n    'Status': 'New'\n  }\n}));"
+      },
+      "id": "09d29185-a2d5-4cb8-80d5-e7372a14fe61",
+      "name": "Normalize Alert 4",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        1088
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "https://www.google.com/alerts/feeds/01178061537733632567/5011872534576560650",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "0669afaa-a807-47d7-8d4f-f7e36f4d0baa",
+      "name": "HTTP Alert 5 — Earnings Churn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        784,
+        1248
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e984221d-9625-4f8f-80b0-727ec10b3385",
+      "name": "XML Parse 5",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        1248
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract items from Google Alerts RSS feed — Signal Type 5 (Earnings/Investor Churn)\nconst feed = $input.first().json.data;\nconst items = feed?.rss?.channel?.item || feed?.feed?.entry || [];\nconst arr = Array.isArray(items) ? items : [items];\nconst today = new Date().toISOString().split('T')[0];\n\nreturn arr.filter(e => e).map(entry => ({\n  json: {\n    'Date': today,\n    'Company Domain': '',\n    'Company Name': '',\n    'Signal Type': '5',\n    'Signal Summary': (entry.title?.[0] ?? entry.title ?? '').toString().replace(/<[^>]+>/g, '').trim(),\n    'Source URL': (entry.link?.[0]?.$ ? entry.link[0].$.href : entry.link?.[0] ?? entry.link ?? '').toString().trim(),\n    'Status': 'New'\n  }\n}));"
+      },
+      "id": "4eb804f3-1eb6-477c-b9df-2637a5265496",
+      "name": "Normalize Alert 5",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        1248
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "numberInputs": 5
+      },
+      "id": "d6093dea-0aef-4c63-8cff-0ec06bd71375",
+      "name": "Merge All Sources",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1504,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().filter(item => {\n  const j = item.json || {};\n  return j['Signal Summary'] && j['Source URL'];\n});\n\nif (items.length === 0) {\n  return [{\n    json: {\n      model: 'moonshotai/kimi-k2-0905',\n      response_format: { type: 'json_object' },\n      messages: [\n        {\n          role: 'system',\n          content: 'You are a B2B SaaS company domain extractor. Return ONLY a valid JSON object in this exact format: {\"domains\": []}.'\n        },\n        {\n          role: 'user',\n          content: 'Extract the primary company domain for each signal below. Return exactly 0 entries in the domains array.'\n        }\n      ],\n      temperature: 0,\n      max_tokens: 800,\n      originalItems: []\n    }\n  }];\n}\n\nconst originalItems = items.map(i => i.json);\n\nconst signalList = originalItems.map((item, i) => {\n  const title = String(item['Signal Summary'] || '')\n    .replace(/\"/g, \"'\")\n    .slice(0, 200);\n  const url = String(item['Source URL'] || '')\n    .slice(0, 150);\n  return `${i}: \"${title}\" | ${url}`;\n}).join('\\n');\n\nreturn [{\n  json: {\n    model: 'moonshotai/kimi-k2-0905',\n    response_format: { type: 'json_object' },\n    messages: [\n      {\n        role: 'system',\n        content: 'You are a B2B SaaS company domain extractor. You receive a numbered list of signal headlines sourced from Google Alerts, Reddit, and HN. Each headline is about or mentions a B2B SaaS company. Your job is to identify the PRIMARY company being discussed in each signal and return its exact web domain (e.g. gong.io, hubspot.com, gainsight.com, churnzero.com). Return ONLY a valid JSON object in this exact format: {\"domains\": [\"domain1.com\", \"domain2.com\", \"...\"]} with exactly one entry per input signal in the same order. Use an empty string \"\" if you cannot identify the company. Do not include any explanation, markdown, or text outside the JSON object.'\n      },\n      {\n        role: 'user',\n        content: `Extract the primary company domain for each signal below. Return exactly ${originalItems.length} entries in the domains array.\\n\\n${signalList}`\n      }\n    ],\n    temperature: 0,\n    max_tokens: 800,\n    originalItems\n  }\n}];"
+      },
+      "id": "0bf8f353-eedc-4279-9c3c-9df722177c86",
+      "name": "Code — Prepare Domain Extraction Batch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        1008
+      ],
+      "notes": "Collapses N signal items into ONE item containing all titles+URLs as a numbered list. Runs once for all items (default Code node mode). The single output item feeds the OpenRouter HTTP node so we make exactly one LLM call per WF1 execution regardless of signal volume."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openRouterApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "da14c23e-39d1-4aba-8488-0fa3ed70ebd0",
+      "name": "HTTP — OpenRouter Extract Domains",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2224,
+        1008
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uM6SVfqA6c18NyzX",
+          "name": "OpenRouter QuadSci"
+        },
+        "openRouterApi": {
+          "id": "sU3T9CpIOkDnxbSj",
+          "name": "OpenRouter API"
+        }
+      },
+      "notes": "Same OpenRouter credential as WF4/WF5 (httpHeaderAuth named 'OpenRouter'). Sends all signal titles as one numbered batch. response_format json_object prevents markdown wrapping. temperature:0 for deterministic extraction. max_tokens:800 gives headroom for 50+ signals (each domain ~15 chars)."
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─────────────────────────────────────────────────────────────────────────\n// WHY WE RECOVER originalItems BY NODE NAME\n// ─────────────────────────────────────────────────────────────────────────\n// n8n HTTP Request nodes replace $json entirely with the API response body.\n// The originalItems array we built in 'Code — Prepare Domain Extraction Batch'\n// is NOT in $json here — it was consumed by the HTTP node's expression.\n// We recover it by referencing the upstream node by name, exactly as WF4\n// does when it recovers the merged account row after the OpenRouter scoring call.\n// ─────────────────────────────────────────────────────────────────────────\n\nconst response      = $input.first().json;\nconst batchNode     = $('Code — Prepare Domain Extraction Batch').first().json;\nconst originalItems = batchNode.originalItems || [];\n\n// ── Parse LLM response ───────────────────────────────────────────────────\nlet domains = [];\ntry {\n  const content = response?.choices?.[0]?.message?.content || '{\"domains\":[]}';\n  const cleaned = typeof content === 'string' ? content.replace(/```json\\n?|\\n?```/g, '').trim() : '';\n  const parsed = JSON.parse(cleaned || '{\"domains\":[]}}');\n  domains = Array.isArray(parsed.domains) ? parsed.domains : [];\n} catch (e) {\n  // LLM returned unparseable content — proceed with empty domains.\n  // Items with no domain will be dropped below, which is correct:\n  // a signal with unknown domain contributes nothing to WF3's clustering.\n  domains = [];\n}\n\n// ── Re-expand: one output item per original signal ───────────────────────\nconst results = [];\nfor (let i = 0; i < originalItems.length; i++) {\n  const item   = originalItems[i];\n\n  // Prefer any domain already set on the item (e.g. WF2-style extraction)\n  // then fall back to what the LLM returned\n  const extracted   = (domains[i] || '').toString().toLowerCase()\n                        .replace(/^https?:\\/\\//, '')\n                        .replace(/^www\\./, '')\n                        .replace(/\\/.*$/, '')\n                        .trim();\n  const finalDomain = (item['Company Domain'] || extracted || '').trim();\n\n  // Drop signals where we still have no domain — they add noise without value\n  if (!finalDomain) continue;\n\n  // Best-effort company name: capitalise the domain root if name is missing\n  const domainRoot     = finalDomain.split('.')[0];\n  const inferredName   = domainRoot.charAt(0).toUpperCase() + domainRoot.slice(1);\n  const finalName      = (item['Company Name'] || inferredName).trim();\n\n  results.push({\n    json: {\n      ...item,\n      'Company Domain': finalDomain,\n      'Company Name':   finalName\n    }\n  });\n}\n\n// Return empty array if LLM could not identify any domain.\n// Empty array in n8n means 'no items' — downstream Sheets node skips gracefully.\nreturn results;"
+      },
+      "id": "ba520d6a-6ac4-46f3-8715-a6418db772a4",
+      "name": "Code — Attach Extracted Domains",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        1008
+      ],
+      "alwaysOutputData": true,
+      "notes": "Re-expands the single OpenRouter response back into N signal items. Merges the LLM-extracted domain onto each original signal row. Drops rows where domain is still empty (unidentifiable signals). Returns empty array if nothing was extractable — Sheets Append node safely skips."
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Signal Log",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company Domain",
+              "displayName": "Company Domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Signal Type",
+              "displayName": "Signal Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Signal Summary",
+              "displayName": "Signal Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Source URL",
+              "displayName": "Source URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "325f6c6d-6934-4b40-8cfc-ca66dcb84e3f",
+      "name": "Google Sheets — Append Signal",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        2704,
+        1008
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "mCitxoRY2r1cdcjh",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search.json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google"
+            },
+            {
+              "name": "q",
+              "value": "(\"net revenue retention\" OR \"NRR\") (\"earnings\" OR \"investor letter\" OR \"10-K\") (company OR saas OR revenue)"
+            },
+            {
+              "name": "num",
+              "value": "20"
+            },
+            {
+              "name": "api_key",
+              "value": "f970fdb495fd1460609c1ce9d9d7bc0bff13f3c2fdd14538274b0b13e18adfa5"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "1fd27d0c-be6e-4087-b728-a90c8a6b6913",
+      "name": "HTTP Alert 3 — NRR Pain1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        928,
+        928
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.google.com/alerts/feeds/01178061537733632567/8413586533246980820",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "d020c9d2-31e1-4545-91bf-cb70e1172eff",
+      "name": "HTTP Alert 3 — NRR Pain",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        384,
+        1520
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Alert 1 — Job Postings",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Alert 2 — G2 Reviews",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Alert 4 — Leadership Hires",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Alert 5 — Earnings Churn",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Alert 3 — NRR Pain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Alert 1 — Job Postings": {
+      "main": [
+        [
+          {
+            "node": "XML Parse 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "XML Parse 1": {
+      "main": [
+        [
+          {
+            "node": "Normalize Alert 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Alert 1": {
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Alert 2 — G2 Reviews": {
+      "main": [
+        [
+          {
+            "node": "XML Parse 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "XML Parse 2": {
+      "main": [
+        [
+          {
+            "node": "Normalize Alert 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Alert 2": {
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "XML Parse 3": {
+      "main": [
+        []
+      ]
+    },
+    "Normalize Alert 3": {
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "HTTP Alert 4 — Leadership Hires": {
+      "main": [
+        [
+          {
+            "node": "XML Parse 4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "XML Parse 4": {
+      "main": [
+        [
+          {
+            "node": "Normalize Alert 4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Alert 4": {
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "HTTP Alert 5 — Earnings Churn": {
+      "main": [
+        [
+          {
+            "node": "XML Parse 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "XML Parse 5": {
+      "main": [
+        [
+          {
+            "node": "Normalize Alert 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Alert 5": {
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Merge All Sources": {
+      "main": [
+        [
+          {
+            "node": "Code — Prepare Domain Extraction Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Prepare Domain Extraction Batch": {
+      "main": [
+        [
+          {
+            "node": "HTTP — OpenRouter Extract Domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP — OpenRouter Extract Domains": {
+      "main": [
+        [
+          {
+            "node": "Code — Attach Extracted Domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Attach Extracted Domains": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets — Append Signal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Alert 3 — NRR Pain": {
+      "main": [
+        [
+          {
+            "node": "XML Parse 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Alert 3 — NRR Pain1": {
+      "main": [
+        [
+          {
+            "node": "Normalize Alert 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d125fb4c-22b2-46c7-bfb8-c92aca199472",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2937f53cf7d4f752601b86a3c3b2ce9edd949a058b20d977b6b8328c69cff778"
+  },
+  "id": "Lm6IDh43vPamVTK8",
+  "tags": [
+    {
+      "updatedAt": "2026-05-25T23:16:57.705Z",
+      "createdAt": "2026-05-25T23:16:57.705Z",
+      "id": "lRKTKUtOG1wLcOi4",
+      "name": "quadsci"
+    }
+  ]
+}

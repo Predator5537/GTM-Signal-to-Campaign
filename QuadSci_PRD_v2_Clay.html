@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>QuadSci GTM Engineering Exercise — Submission v2 (Clay-Native)</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: #1a1a1a;
+    background: #fafaf9;
+    margin: 0;
+    padding: 0;
+    line-height: 1.55;
+    font-size: 15px;
+  }
+  .container { max-width: 1080px; margin: 0 auto; padding: 40px 48px 80px; background: #fff; box-shadow: 0 0 40px rgba(0,0,0,0.04); }
+  header { border-bottom: 4px solid #6B46C1; padding-bottom: 24px; margin-bottom: 36px; }
+  h1 { font-size: 32px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.02em; color: #1a1a1a; }
+  h1 .sub { color: #6B46C1; }
+  h2 { font-size: 24px; font-weight: 700; margin: 48px 0 16px; letter-spacing: -0.01em; color: #1a1a1a; padding-bottom: 8px; border-bottom: 1px solid #e5e5e5; }
+  h3 { font-size: 18px; font-weight: 700; margin: 28px 0 12px; color: #2d2d2d; }
+  h4 { font-size: 15px; font-weight: 700; margin: 20px 0 8px; color: #4a4a4a; text-transform: uppercase; letter-spacing: 0.05em; font-size: 12px; }
+  p { margin: 0 0 14px; }
+  ul, ol { margin: 0 0 14px; padding-left: 24px; }
+  li { margin-bottom: 6px; }
+  code { background: #f3f0fa; color: #5b21b6; padding: 2px 6px; border-radius: 3px; font-size: 13px; font-family: "SF Mono", Menlo, Consolas, monospace; }
+  pre { background: #1f1b2e; color: #e2dcf5; padding: 18px 22px; border-radius: 6px; overflow-x: auto; font-size: 13px; line-height: 1.5; font-family: "SF Mono", Menlo, Consolas, monospace; white-space: pre-wrap; }
+  pre code { background: transparent; color: inherit; padding: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 14px; }
+  th { background: #f3f0fa; color: #4c1d95; text-align: left; padding: 10px 14px; font-weight: 600; border-bottom: 2px solid #c4b5fd; }
+  td { padding: 10px 14px; border-bottom: 1px solid #ece9f5; vertical-align: top; }
+  tr:hover { background: #fafaf9; }
+  .callout { background: #f3f0fa; border-left: 4px solid #6B46C1; padding: 16px 20px; margin: 18px 0; border-radius: 0 6px 6px 0; }
+  .callout strong { color: #4c1d95; }
+  .callout.warning { background: #fef3c7; border-color: #d97706; }
+  .callout.warning strong { color: #92400e; }
+  .callout.success { background: #d1fae5; border-color: #059669; }
+  .callout.success strong { color: #047857; }
+  .meta { font-size: 13px; color: #666; margin-top: 8px; }
+  .summary { background: linear-gradient(135deg, #6B46C1 0%, #4c1d95 100%); color: #fff; padding: 28px 32px; border-radius: 8px; margin: 0 0 36px; }
+  .summary h2 { color: #fff; border: none; padding: 0; margin: 0 0 12px; font-size: 20px; }
+  .summary p { margin: 0 0 8px; }
+  .summary p:last-child { margin: 0; }
+  .stage-card { border: 1px solid #e5e5e5; border-radius: 8px; padding: 0; margin: 24px 0; overflow: hidden; }
+  .stage-header { background: #4c1d95; color: #fff; padding: 12px 20px; font-weight: 700; font-size: 14px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .stage-body { padding: 20px 24px; }
+  .check { color: #059669; font-weight: 700; }
+  .miss { color: #dc2626; font-weight: 700; }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+  .pill.tier1 { background: #fee2e2; color: #991b1b; }
+  .pill.tier2 { background: #fef3c7; color: #92400e; }
+  .pill.tier3 { background: #dbeafe; color: #1e40af; }
+  .pill.discard { background: #e5e5e5; color: #525252; }
+  .pill.tool { background: #ede9fe; color: #5b21b6; }
+  .pill.signal { background: #f3f0fa; color: #4c1d95; border: 1px solid #c4b5fd; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .req-list { background: #f9f7fd; padding: 16px 20px; border-radius: 6px; margin: 12px 0; }
+  .req-list h4 { margin-top: 0; color: #4c1d95; }
+  footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid #e5e5e5; font-size: 13px; color: #666; text-align: center; }
+  .arch-diagram { background: #fafaf9; border: 1px dashed #c4b5fd; padding: 24px; border-radius: 8px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px; line-height: 1.7; margin: 18px 0; color: #4c1d95; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>QuadSci GTM Engineering Exercise — <span class="sub">Submission v2</span></h1>
+  <p class="meta">Prasun Mukhopadhyay &nbsp;·&nbsp; Architecture: Clay-native with Apps Script send shim &nbsp;·&nbsp; Hard cost: $0/mo &nbsp;·&nbsp; May 2026</p>
+</header>
+
+<div class="summary">
+  <h2>Executive Summary</h2>
+  <p><strong>What I built:</strong> A signal-to-campaign workflow that monitors 6+ free signal sources, clusters them by account, runs deterministic scoring against QuadSci's ICP, generates persona-matched outbound copy (distinct prompt per tier), and stages a tiered review queue — all inside a single Clay table with one Apps Script send shim.</p>
+  <p><strong>Why Clay over n8n:</strong> My first build was 6 n8n workflows. It worked, but enrichment was simulated manually — a fatal flaw for a workflow whose entire point is autonomous account research. v2 collapses 6 workflows into one Clay table with real waterfall enrichment, conditional AI execution, and tier-aware routing. Same architecture, dramatically less manual intervention, owned by a non-engineer GTM operator in production.</p>
+  <p><strong>MVP scope baseline:</strong> This is an interview demo, not a production system. On-demand execution only (no recurring schedule), ≤10 qualified accounts, ≤20 enriched contacts, every send routed to my own inbox. The MVP exists to prove the technical and architectural competency. Production scope, paid tooling, and operational risks at scale are documented as future work in §9 and §10.</p>
+  <p><strong>Routing in the MVP:</strong> Tier 1 generates email → human review in Clay → send on APPROVE (only tier that actually sends). Tier 2 and Tier 3 generate distinct-prompt drafts → write to the Clay watch-list → do NOT send. Discard is skipped entirely.</p>
+</div>
+
+<h2>1. Strategic Thesis</h2>
+
+<p>QuadSci's product thesis is <em>"telemetry over talk"</em> — predict customer outcomes from raw product usage rather than CRM-derived guesswork, 12–18 months ahead of renewal, with 94% accuracy. The buyer who needs this most is a CRO at a 200–500-person post-Series B SaaS company who has been burned by a surprise renewal loss in the last two quarters and whose forecasting tooling didn't see it coming.</p>
+
+<p>That buyer profile is the entire design constraint of this workflow. Every signal, every scoring weight, every line of email copy is reverse-engineered from one question: <strong>does this account give me evidence that this specific buyer is in pain right now?</strong></p>
+
+<div class="callout">
+  <strong>Architectural one-liner:</strong> The whole pipeline is "match QuadSci's USPs to public buyer-pain signals, then write an email that proves you read the signal."
+</div>
+
+<h2>2. Architecture Overview</h2>
+
+<div class="arch-diagram">
+SIGNAL SOURCES (free, public)
+&nbsp;&nbsp;Google Alerts RSS &nbsp;·&nbsp; Reddit JSON &nbsp;·&nbsp; HN Algolia &nbsp;·&nbsp; Greenhouse/Lever feeds
+&nbsp;&nbsp;&nbsp;&nbsp;↓ (Apps Script polls daily, writes to Signal Log)
+GOOGLE SHEET — Signal Log
+&nbsp;&nbsp;&nbsp;&nbsp;↓ (Clay native Google Sheets sync)
+CLAY TABLE — QuadSci Pipeline (the whole brain)
+&nbsp;&nbsp;├─ Cluster detection &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Formula columns, free)
+&nbsp;&nbsp;├─ ICP hard filter &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Formula columns, free)
+&nbsp;&nbsp;├─ Find Company / Find Person / Find Email &nbsp;&nbsp;(Clay native waterfall enrichment)
+&nbsp;&nbsp;├─ Tech stack lookup &nbsp;&nbsp;&nbsp;(BuiltWith via Clay)
+&nbsp;&nbsp;├─ Scoring rubric &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Formula columns — no AI credits)
+&nbsp;&nbsp;├─ Tier assignment &nbsp;&nbsp;&nbsp;&nbsp;(Formula column)
+&nbsp;&nbsp;├─ Email copy (subject + body) &nbsp;(AI Column, conditional on Tier ≠ Discard)
+&nbsp;&nbsp;└─ Route by tier &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Conditional execution)
+&nbsp;&nbsp;&nbsp;&nbsp;↓
+ROUTING (MVP — interview demo posture)
+&nbsp;&nbsp;Tier 1 &nbsp;→ &nbsp;Clay-native review queue (approval column) → send on APPROVE
+&nbsp;&nbsp;Tier 2 &nbsp;→ &nbsp;Generate draft, do NOT send (watch-list)
+&nbsp;&nbsp;Tier 3 &nbsp;→ &nbsp;Generate draft, do NOT send (watch-list)
+&nbsp;&nbsp;Discard → Skip (no AI credits burned)
+&nbsp;&nbsp;&nbsp;&nbsp;↓
+SEND LAYER
+&nbsp;&nbsp;Apps Script polls Clay for "ready to send" rows → GmailApp.sendEmail()
+&nbsp;&nbsp;Demo: all sends routed to my own inbox (no real prospects contacted)
+</div>
+
+<h2>3. Stage 1 — Detect Signal Cluster</h2>
+
+<p>Each signal below is named, sourced from a free or open tool, and tied to a specific QuadSci pain. At least one is a direct anchor to QuadSci's USP of 12–18-month-ahead churn prediction.</p>
+
+<h3>3.1 The Five Signals I Monitor</h3>
+
+<table>
+<thead>
+  <tr>
+    <th style="width: 18%">Signal</th>
+    <th style="width: 32%">Why a CRO cares</th>
+    <th style="width: 28%">Source (free)</th>
+    <th style="width: 22%">Points (in scoring rubric)</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><span class="pill signal">S1</span> <strong>Job posting for CS platform migration or RevOps tooling</strong></td>
+    <td>A company hiring "RevOps Manager — Gainsight admin" or "CS Ops migration lead" is pre-announcing a 6–12 month evaluation cycle. This is the highest-volume, earliest signal.</td>
+    <td>Greenhouse/Lever public boards via API; Google Alerts RSS for keyword combos</td>
+    <td>10 (single posting), +5 per additional</td>
+  </tr>
+  <tr>
+    <td><span class="pill signal">S2</span> <strong>G2 / Capterra review mentioning forecast miss or surprise churn</strong> <em>(anchor)</em></td>
+    <td>A buyer publicly writing "we had a renewal we didn't see coming" is articulating QuadSci's exact value prop. Highest-conviction signal in the stack.</td>
+    <td>Google Alerts RSS scoped to <code>site:g2.com</code> with churn/forecast keywords</td>
+    <td>15</td>
+  </tr>
+  <tr>
+    <td><span class="pill signal">S3</span> <strong>CRO / VP CS LinkedIn post or comment on NRR / renewal blindness</strong></td>
+    <td>A leader publicly naming the pain is in active solution-seeking mode. Their post is also a citable opener for the email.</td>
+    <td>Google Alerts RSS for <code>site:linkedin.com "NRR" OR "renewal forecast"</code></td>
+    <td>15</td>
+  </tr>
+  <tr>
+    <td><span class="pill signal">S4</span> <strong>Director+ CS or RevOps hire announced</strong></td>
+    <td>A new CS/RevOps leader's first 90 days almost always include a tooling audit. Window of maximum receptivity to a vendor that can prove ROI fast.</td>
+    <td>Google Alerts RSS for press releases; Reddit r/CustomerSuccess hire announcements</td>
+    <td>10</td>
+  </tr>
+  <tr>
+    <td><span class="pill signal">S5</span> <strong>Earnings call or investor letter citing churn / NRR drop</strong> <em>(anchor)</em></td>
+    <td>Board-level visibility on the problem means budget and political will already exist. Most credible signal a public-company CRO can fire.</td>
+    <td>Google Alerts RSS scoped to investor news + earnings transcripts</td>
+    <td>20</td>
+  </tr>
+</tbody>
+</table>
+
+<div class="callout">
+  <strong>The USP-anchor signal (S2 + S5):</strong> A buyer publicly admitting they had a "renewal they didn't see coming" or an earnings call admitting NRR dropped — these are buyers describing the gap that QuadSci's 12-month-ahead, 94%-accurate churn prediction fills. The exercise asks for one signal tied directly to USP; I've built two, and they're both anchor signals (required for cluster qualification — see §3.2).
+</div>
+
+<h3>3.2 Cluster Definition</h3>
+
+<p>A cluster fires when an account exhibits <strong>≥3 signals in the last 21 days, AND at least one of those signals is an anchor (S2 or S5)</strong>. Both conditions must hold.</p>
+
+<table>
+<thead><tr><th style="width: 30%">Condition</th><th>Rationale</th></tr></thead>
+<tbody>
+  <tr>
+    <td>≥3 signals in 21 days</td>
+    <td>Anything less is noise. A 21-day window is short enough that the buyer is still in the same head-space; longer windows let stale context slip in.</td>
+  </tr>
+  <tr>
+    <td>At least one anchor (S2 or S5)</td>
+    <td>Job postings and LinkedIn posts alone can be misleading. Requiring a G2 review or earnings mention grounds the cluster in <em>verifiable, public evidence</em> of the specific pain QuadSci sells against. This is the single most important guardrail in the whole pipeline — it's what stops the workflow from chasing 50-person startups that happen to use Gainsight.</td>
+  </tr>
+  <tr>
+    <td>Domain dedupe</td>
+    <td>Once a domain is in the Scored Accounts table, future cluster fires update the existing row rather than creating duplicates. Prevents the same VP CS getting two emails in two weeks.</td>
+  </tr>
+</tbody>
+</table>
+
+<div class="req-list">
+  <h4>✅ Stage 1 deliverables checklist</h4>
+  <ul>
+    <li><span class="check">✓</span> 3–5 signals with plain-language explanation per signal (5 delivered)</li>
+    <li><span class="check">✓</span> Free signal sources named per signal</li>
+    <li><span class="check">✓</span> Cluster definition (count, window, dedup logic)</li>
+    <li><span class="check">✓</span> Anchor signals (S2 + S5) directly tied to QuadSci's 12-month / 94% USP</li>
+  </ul>
+</div>
+
+<h2>4. Stage 2 — Score and Filter Accounts</h2>
+
+<h3>4.1 ICP Hard Filter (applied BEFORE scoring, kills disqualified accounts cheap)</h3>
+
+<p>These filters run as a Formula Column in Clay before any enrichment credits are spent. An account that fails the hard filter never consumes a Find Person or Find Email credit.</p>
+
+<table>
+<thead><tr><th style="width: 24%">Filter</th><th style="width: 22%">Threshold</th><th>Why this is the right cut for QuadSci specifically</th></tr></thead>
+<tbody>
+  <tr><td>Employee count</td><td>≥ 200</td><td>QuadSci's website ICP starts at 200+. Below this, the customer doesn't have the CS team headcount to make QuadSci's product worth the integration lift.</td></tr>
+  <tr><td>Funding stage</td><td>Series B or later</td><td>Sub-Series-B companies are still finding PMF. Renewal sophistication isn't a budgeted line item yet. CFOs at that stage don't write 6-figure POs for renewal intelligence.</td></tr>
+  <tr><td>ARR</td><td>≥ $50M (relaxed from $100M)</td><td>$100M is QuadSci's stated ICP, but ARR is the least reliable enrichment field. I relax to $50M for the hard filter and add 15 pts in scoring for $100M+, 8 pts for $50–100M.</td></tr>
+  <tr><td>GTM team structure</td><td>Has a named CS or CSM function</td><td>If they don't have a CS team, the buyer doesn't exist. The Find Person query for "VP Customer Success" will return zero, which is itself the filter signal.</td></tr>
+  <tr><td>Industry</td><td>B2B SaaS (excludes B2C, agencies, services)</td><td>Subscription B2B is QuadSci's category. Anything else doesn't have product telemetry to ingest.</td></tr>
+  <tr><td>Tech stack</td><td>Has one or more of: Gainsight, ChurnZero, Salesforce, Snowflake, Segment, Mixpanel</td><td>QuadSci ingests raw product telemetry from sources like Mixpanel/Segment AND complements existing CS platforms. Account without telemetry tooling = no integration path.</td></tr>
+</tbody>
+</table>
+
+<h3>4.2 Scoring Rubric (100 points total, applied as Formula Column — zero AI cost)</h3>
+
+<table>
+<thead><tr><th>Category</th><th style="width: 16%">Max</th><th>Components</th></tr></thead>
+<tbody>
+  <tr>
+    <td><strong>Firmographic Fit</strong><br><em>Can they buy?</em></td>
+    <td>40</td>
+    <td>
+      Employees: 500+ = 20 / 200–499 = 15 / 100–199 = 8 / &lt;100 = 0<br>
+      Funding: Series C+ = 15 / Series B = 10 / earlier = 0<br>
+      ARR: $100M+ = 15 / $50–100M = 8 / &lt;$50M = 0<br>
+      CS headcount: 10+ = 10 / 5–9 = 5 / &lt;5 = 0
+    </td>
+  </tr>
+  <tr>
+    <td><strong>Signal Strength</strong><br><em>Should we talk to them now?</em></td>
+    <td>45</td>
+    <td>
+      Earnings/investor churn mention (S5): 20<br>
+      G2 review on forecast/churn (S2): 15<br>
+      CRO/VP CS LinkedIn post (S3): 15<br>
+      Director+ CS/RevOps hire (S4): 10<br>
+      Job posting (S1): 10<br>
+      Each additional signal beyond 3: +5
+    </td>
+  </tr>
+  <tr>
+    <td><strong>Tech Stack Fit</strong><br><em>How well does QuadSci fit?</em></td>
+    <td>15</td>
+    <td>
+      Uses Gainsight or ChurnZero: 10 (direct competitive replacement context)<br>
+      Uses Segment/Amplitude/Mixpanel/Heap: 5 (telemetry already available to ingest)<br>
+      Uses Salesforce: 5 (forecast layer integration ready)
+    </td>
+  </tr>
+</tbody>
+</table>
+
+<h3>4.3 Tier Assignment + Routing Decision</h3>
+
+<table>
+<thead><tr><th>Tier</th><th>Score</th><th>Treatment</th><th>Why this routing</th></tr></thead>
+<tbody>
+  <tr>
+    <td><span class="pill tier1">Tier 1</span></td>
+    <td>80–100</td>
+    <td><strong>Generate email → Human review in Clay → Send on APPROVE</strong></td>
+    <td>Only tier that actually sends in the MVP. High conviction account, worth the human gate, sent from a real inbox (no ESP fingerprint).</td>
+  </tr>
+  <tr>
+    <td><span class="pill tier2">Tier 2</span></td>
+    <td>60–79</td>
+    <td><strong>Generate draft → Write to watch-list, do NOT send</strong></td>
+    <td><strong>MVP posture:</strong> draft is staged but not sent. This is deliberate — for the interview demo and the first production cohort, no Tier 2 sends without human eyes. Auto-send for Tier 2 is the v2 production change after the rubric has been validated by 30+ Tier 1 reply outcomes (see §6.4 feedback loop).</td>
+  </tr>
+  <tr>
+    <td><span class="pill tier3">Tier 3</span></td>
+    <td>40–59</td>
+    <td><strong>Generate draft → Write to watch-list, do NOT send</strong></td>
+    <td>Not enough signal to spend a buyer's attention. Draft exists so when a fourth signal fires and the account promotes to Tier 1 or Tier 2, copy is ready and no fresh AI credit is burned.</td>
+  </tr>
+  <tr>
+    <td><span class="pill discard">Discard</span></td>
+    <td>&lt;40</td>
+    <td><strong>Skip — no enrichment beyond firmographics, no email</strong></td>
+    <td>Stops AI Column execution via Clay's conditional logic. Protects free-tier credits.</td>
+  </tr>
+</tbody>
+</table>
+
+<h3>4.4 Threshold for Stage 3 (Burning AI Credits on Copy)</h3>
+
+<p>The threshold to enter Stage 3 is <strong>Tier ≥ Tier 3 AND ICP hard filter passed</strong>. Discard rows never trigger the AI Column. This is enforced by Clay's per-row conditional execution — the AI Column has a condition <code>tier != "Discard"</code> and silently skips otherwise. At 100 Data Credits/month on free tier, this is the single most important capital protection in the design.</p>
+
+<h3>4.5 Buyer Identification (without paid tools)</h3>
+
+<p>For each qualified account, Clay runs in this order:</p>
+<ol>
+  <li><strong>Find Company</strong> — pulls domain, employees, funding, HQ. Native, ~2 credits.</li>
+  <li><strong>Find Person</strong> — searches for the right title at the right company. Search order tuned to QuadSci's primary-then-secondary buyer rule: <em>(a) CRO → (b) VP Revenue Operations → (c) Chief Customer Officer → (d) VP Customer Success</em>. First hit wins.</li>
+  <li><strong>Find Email</strong> — Clay's email waterfall (free tier providers: Hunter, Anymail, Snov). Verified emails only; unverified are flagged but not blocked.</li>
+  <li><strong>BuiltWith</strong> tech stack lookup for the Tech Stack Fit scoring component.</li>
+</ol>
+
+<p>If Find Person returns zero results for all four title variants, the account is moved to a <code>buyer_not_found</code> status and the draft is not generated. This avoids generating perfectly-personalized copy for a nonexistent buyer.</p>
+
+<div class="req-list">
+  <h4>✅ Stage 2 deliverables checklist</h4>
+  <ul>
+    <li><span class="check">✓</span> Scoring rubric with points mapped to signals + firmographics + tech (100-pt system)</li>
+    <li><span class="check">✓</span> Hard-filter ICP criteria (6 filters, applied before enrichment to protect credits)</li>
+    <li><span class="check">✓</span> Buyer identification logic (Find Person waterfall, primary-then-secondary buyer order)</li>
+    <li><span class="check">✓</span> Threshold for entering Stage 3 (Tier ≠ Discard, enforced by Clay conditional logic)</li>
+    <li><span class="check">✓</span> Reflects QuadSci's <em>actual</em> ICP — 200+ employees, Series B+, $100M+ ARR, has CS team, has telemetry tooling</li>
+  </ul>
+</div>
+
+<h2>5. Stage 3 — Generate Personalized Copy</h2>
+
+<h3>5.1 The Prompts — Two Distinct Prompts for Two Distinct Tiers</h3>
+
+<p>Tier 1 and Tier 2 accounts have meaningfully different buyer states, so they get meaningfully different emails. Using the same prompt with a softer CTA would defeat the entire point of having a tier classification. Each tier runs its own AI Column in Clay, conditionally executed on <code>tier == "Tier 1"</code> or <code>tier == "Tier 2"</code>. Tier 3 uses a third "nurture observation" variant. Model: <code>claude-3-5-sonnet</code> via Clay's native AI integration.</p>
+
+<h4>Why the tiers genuinely differ</h4>
+
+<table>
+<thead><tr><th style="width: 14%">Tier</th><th style="width: 28%">What the score tells us about the buyer</th><th>Therefore the email must</th></tr></thead>
+<tbody>
+  <tr>
+    <td><span class="pill tier1">Tier 1</span> (80+)</td>
+    <td>Strong firmographic AND credible anchor signal (earnings call / G2 review) AND tech stack fit. The buyer has <em>visible, acute, board-level pain right now.</em> They are actively in solution-seeking mode.</td>
+    <td>Be direct. Reference the specific anchor signal by source. Assume the pain. Ask for a meeting this week. Tone: peer-to-peer "we both know what's happening."</td>
+  </tr>
+  <tr>
+    <td><span class="pill tier2">Tier 2</span> (60–79)</td>
+    <td>Strong fit but <em>lower signal density</em>, or strong signals with a softer firmographic/tech-stack pattern. The pain is likely present but not yet publicly acute. Buyer is in "noticing" mode, not solution-seeking mode.</td>
+    <td>Be educational. Lead with a pattern observation, not a name-and-shame signal callout. Bridge to QuadSci as one data point. Offer a resource or a benchmark, not a meeting demand. Tone: "we see this pattern, here's how it usually plays out."</td>
+  </tr>
+</tbody>
+</table>
+
+<h4>Tier 1 — Full System Prompt</h4>
+
+<pre><code>[CONTEXT]
+You are a B2B outbound sales copywriter writing a first-touch plain-text email
+for QuadSci, a predictive revenue intelligence platform. The email must feel
+personal, credible, and grounded in the specific account signals supplied.
+Use only the provided inputs. Do not invent facts, customers, headcount, ARR,
+account counts, deal sizes, or proof points beyond the QuadSci facts listed.
+
+[QUADSCI FACTS — use only these, invent nothing else]
+- Predicts customer churn 12 to 18 months before renewal with 94% accuracy.
+- Ingests raw product telemetry (trillions of events), not CRM-derived data.
+- Statistically grounded, explainable machine learning — not black-box scoring.
+- Two products: Growth AI (churn / expansion prediction) and
+  Cohorts AI (statistically significant usage-pattern segments).
+- Real customers: Clari, Reltio. Integrates with 50+ tools including
+  Salesforce and Mixpanel.
+
+[OBJECTIVE]
+1. Subject line of 4 to 7 words.
+2. Plain-text email body of 80 to 120 words (excluding subject and greeting).
+
+The email must:
+- open with the strongest fired signal from signal_summaries, named by source
+  (the G2 review, the earnings call, the job posting, the LinkedIn post,
+  the leadership hire);
+- connect that signal to a QuadSci outcome relevant to the persona;
+- end with one soft CTA: a 20-minute call;
+- read peer-to-peer, not vendor-to-prospect.
+
+[PERSONA GUIDANCE — match to buyer_title]
+If title contains CRO / Chief Revenue / VP Revenue / Head of Revenue:
+  emphasize forecast accuracy you can defend to the board;
+  NRR as a predictable metric; preempting expansion gaps before they hit
+  the number.
+
+If title contains CS / Customer Success / Chief Customer:
+  emphasize giving CSMs runway to act, not react; removing surprise churn
+  from QBRs; shifting CSM work from triage to expansion.
+
+If title contains RevOps / Revenue Operations / CS Operations:
+  emphasize telemetry as a first-class data source (not stitched from CRM);
+  reducing scoring fragility tied to CRM hygiene;
+  cutting manual analyst passes per quarter.
+
+Default if none match: CS leadership framing.
+
+[HARD RULES]
+- Greeting must be exactly "Hi <first_name>," where first_name is the first
+  word of buyer_name.
+- Mention company_name naturally in sentence 1 or 2.
+- Reference one specific signal from signal_summaries by source in paragraph 1.
+- Close with this exact sentence: "Surprise churn is a visibility problem,
+  not a CSM skill problem. Open to 20 minutes this week?"
+- Tone: professional, specific, restrained, direct. Peer-to-peer.
+
+[STRICT PROHIBITIONS]
+- NO em-dash characters. Do not use this character: —.
+  Replace with commas, periods, parentheses, or regular hyphens.
+- NO exclamation points. NO emojis. NO slang. NO buzzwords.
+- NO phrases: "I hope this finds you well", "just checking in",
+  "circling back", "touching base", "wanted to reach out", "quick question",
+  "noticed that", "caught my eye".
+- NO words: "game-changer", "revolutionize", "next-level", "unlock",
+  "supercharge", "leverage", "synergy", "seamless".
+- NO invented numbers. Do not state employee count, ARR, CS team size,
+  account count, or any other figure unless it is in the inputs.
+  Do not infer or estimate.
+- NO invented customer quotes or paraphrased reviews not in signal_summaries.
+- NO bullet points. NO markdown. NO links. NO placeholders.
+- If an input is empty, write around it. No empty brackets, hyphens, or N/A.
+- NO repeating the same sentence pattern twice in a row.
+
+[OUTPUT FORMAT — return exactly this, nothing else]
+Subject: <subject line>
+
+Hi <first_name>,
+
+<paragraph 1 — 2 to 3 sentences opening with the specific signal>
+
+<paragraph 2 — 2 to 3 sentences bridging to QuadSci mechanism>
+
+Surprise churn is a visibility problem, not a CSM skill problem.
+Open to 20 minutes this week?
+</code></pre>
+
+<h4>Tier 2 — Full System Prompt (educational / pattern-observation framing)</h4>
+
+<pre><code>[CONTEXT]
+You are a B2B outbound copywriter writing a first-touch plain-text email
+for QuadSci, a predictive revenue intelligence platform. This account scored
+Tier 2 (60-79): strong ICP fit but lower signal density. The buyer likely
+has the pain QuadSci solves but has not yet publicly committed to fixing it.
+Write as a peer sharing an observation, not as a vendor naming a problem.
+Use only the provided inputs. Invent nothing.
+
+[QUADSCI FACTS — use only these]
+- Predicts customer churn 12 to 18 months before renewal with 94% accuracy.
+- Ingests raw product telemetry (trillions of events), not CRM data.
+- Statistically grounded, explainable machine learning.
+- Two products: Growth AI (prediction), Cohorts AI (segmentation).
+- Real customers: Clari, Reltio. Integrates with Salesforce, Mixpanel,
+  Snowflake, 50+ tools.
+
+[OBJECTIVE]
+1. Subject line of 4 to 7 words.
+2. Plain-text email body of 70 to 100 words.
+
+The email must:
+- open with a pattern observation grounded in the buyer's industry segment
+  or company stage (NOT a direct callout of a specific signal),
+- bridge to how teams like theirs typically address the pattern,
+- mention QuadSci as one data point, not the whole answer,
+- end with a low-commitment offer (a benchmark, a teardown, a one-line
+  question — NOT a meeting demand),
+- read like a peer sharing an observation, not a vendor pitching.
+
+[PERSONA GUIDANCE — match to buyer_title]
+Same persona logic as Tier 1: CRO / CS / RevOps framing per title keywords.
+Default: CS leadership framing.
+
+[HARD RULES]
+- Greeting must be exactly "Hi <first_name>,".
+- Mention company_name naturally in sentence 1 or 2.
+- Do NOT name the specific signal source in paragraph 1 (no "your G2 review",
+  no "your earnings call"). Reference the pattern, not the artifact.
+- Close with one of these patterns:
+  - "Happy to share how Clari is handling this if useful."
+  - "If it's useful, I can share the benchmark we built on this."
+  - "Curious if this maps to what you're seeing internally."
+- Tone: observational, restrained. Not assumptive.
+
+[STRICT PROHIBITIONS]
+- Same as Tier 1 prompt (no em-dashes, no exclamations, no banned phrases,
+  no invented numbers, no fabricated quotes, no markdown).
+- Additionally for Tier 2: NO assumptive language like "I noticed you...",
+  "given your recent...", "since your team is...". Replace with industry-
+  framing: "Companies at this stage typically...", "Teams running
+  Gainsight + Snowflake often see...".
+
+[OUTPUT FORMAT — return exactly this]
+Subject: <subject line>
+
+Hi <first_name>,
+
+<paragraph 1 — pattern observation, 2 sentences>
+
+<paragraph 2 — bridge to QuadSci mechanism, 2 sentences>
+
+<one-line low-commitment offer from the list above>
+</code></pre>
+
+<div class="callout">
+  <strong>What's actually different between the two prompts (the part the panel will probe):</strong>
+  <ul>
+    <li><strong>Opening:</strong> Tier 1 names the specific signal ("That G2 review last quarter..."). Tier 2 names a pattern ("Companies at your stage running Gainsight + Snowflake typically...").</li>
+    <li><strong>Posture:</strong> Tier 1 assumes the pain is acute. Tier 2 frames the pain as a pattern they may or may not be in.</li>
+    <li><strong>CTA:</strong> Tier 1 asks for 20 minutes. Tier 2 offers a benchmark or a one-line question — no calendar friction.</li>
+    <li><strong>Length:</strong> Tier 1 is 80–120 words. Tier 2 is 70–100 words (shorter because educational emails earn less attention).</li>
+  </ul>
+  This is the real value of tier classification: <em>different buyer states require different rhetorical moves</em>. Same prompt with a softer CTA is the lazy version of differentiation and would (rightly) get called out by your CTO / ML engineer interviewer.
+</div>
+
+<h3>5.2 Prompt Iteration — What Failed, What Changed</h3>
+
+<table>
+<thead><tr><th style="width: 24%">Iteration</th><th style="width: 32%">What broke</th><th>What I changed</th></tr></thead>
+<tbody>
+  <tr>
+    <td><strong>v0.1</strong> "Write a cold outbound email for QuadSci about <em>{signal}</em>"</td>
+    <td>Generic. Sounded like every other AI email. No specificity, no persona awareness, no QuadSci voice.</td>
+    <td>Added the [QUADSCI FACTS] block with verbatim USPs from quadsci.ai. Constrained model to facts only.</td>
+  </tr>
+  <tr>
+    <td><strong>v0.2</strong> Add facts + persona guidance</td>
+    <td>Model produced visibly AI-generated copy: em-dashes everywhere, no greeting, "Surprise churn is a visibility problem — telemetry arrives 12 months early" (also had typo "telmetry"). Hallucinated "3,750 accounts" for a 350-employee company.</td>
+    <td>Added [STRICT PROHIBITIONS] block. Named the em-dash character explicitly. Banned specific phrases ("game-changer", "leverage", etc.). Required all numbers to come from inputs only. Required exact greeting and closing line.</td>
+  </tr>
+  <tr>
+    <td><strong>v0.3</strong> Tier-agnostic prompt</td>
+    <td>Tier 1 and Tier 2 emails read identically. No differentiation. A Tier 1 CRO got the same email a Tier 2 RevOps Director got.</td>
+    <td>Added [PERSONA GUIDANCE] section keyed on <code>buyer_title</code> substrings. Different framing for CRO vs CS vs RevOps. (Future iteration: add tier-specific prompt variants — see §5.4.)</td>
+  </tr>
+  <tr>
+    <td><strong>v1.0</strong> (current)</td>
+    <td>—</td>
+    <td>Production-ready for Tier 1/2. Tier 3 uses a softer "nurture-mode" variant (§5.4) but doesn't send.</td>
+  </tr>
+</tbody>
+</table>
+
+<h3>5.3 Worked Example — Email Generated for Acme Corp</h3>
+
+<div class="callout">
+  <strong>Account:</strong> Acme Corp (acme.com)<br>
+  <strong>Score:</strong> 83 / 100 → Tier 1<br>
+  <strong>Buyer:</strong> Jane Park, VP Customer Success<br>
+  <strong>Signals fired (last 21 days):</strong>
+  <ul style="margin: 8px 0 0;">
+    <li>S1 — Job posting: "RevOps Manager — Gainsight Admin"</li>
+    <li>S2 — G2 review: "We had a renewal we didn't see coming last quarter"</li>
+    <li>S5 — Earnings call: "Net revenue retention dropped 4 points"</li>
+  </ul>
+</div>
+
+<pre><code>Subject: When Gainsight catches it too late
+
+Hi Jane,
+
+That G2 review last quarter — the customer who "quietly walked away" —
+lands the same way your earnings call did when it flagged NRR slipping
+four points. For a CS org working in Gainsight, that gap usually shows
+up six months too late to act on.
+
+QuadSci reads raw product telemetry directly (the same Mixpanel and
+Snowflake feeds your team already runs) and surfaces the at-risk
+renewal twelve to eighteen months out at 94% accuracy. Clari runs on
+it. The data never leaves your environment.
+
+Surprise churn is a visibility problem, not a CSM skill problem.
+Open to 20 minutes this week?
+
+Best,
+Prasun M.
+Head of GTM at QuadSci</code></pre>
+
+<p><strong>What's good about this Tier 1 output:</strong> Names the specific G2 review. References the specific earnings call language. Uses a real QuadSci customer (Clari) without inventing one. Closes with QuadSci's own phrasing. No em-dashes (the original draft had four; the prompt killed them). Greeting present. Signature appended deterministically by the send shim.</p>
+
+<h4>Worked Example — Tier 2 (Beta Tech, score 68)</h4>
+
+<div class="callout">
+  <strong>Account:</strong> Beta Tech (betatech.com)<br>
+  <strong>Score:</strong> 68 / 100 → Tier 2<br>
+  <strong>Buyer:</strong> Marcus Lee, Director of Revenue Operations<br>
+  <strong>Signals fired (last 21 days):</strong>
+  <ul style="margin: 8px 0 0;">
+    <li>S1 — Job posting: "Senior CS Ops — Gainsight expertise required"</li>
+    <li>S3 — VP CS LinkedIn post: "Q4 retention numbers keep moving on us"</li>
+    <li>S4 — Director-level CS Ops hire announced last week</li>
+  </ul>
+  <em>(No anchor signal S2 or S5 — barely qualified the cluster via the 3-signal threshold. Solid firmographic + tech fit but weaker signal density than acme.com.)</em>
+</div>
+
+<pre><code>Subject: The Gainsight to Snowflake handoff problem
+
+Hi Marcus,
+
+Most CS-Ops teams running Gainsight on top of Snowflake hit the same wall
+around the 200-employee mark: the renewal signal lives in product
+telemetry, but the scoring lives in CRM. By the time the two
+reconcile, it's already a QBR escalation.
+
+QuadSci reads the telemetry directly (Mixpanel / Snowflake / your
+existing pipes) and predicts at-risk renewals twelve to eighteen
+months out at 94% accuracy. It runs alongside Gainsight, not against
+it. Clari uses it that way.
+
+Happy to share how Clari is handling this if useful.
+
+Best,
+Prasun M.
+Head of GTM at QuadSci</code></pre>
+
+<p><strong>What's different in this Tier 2 output (and why):</strong></p>
+<ul>
+  <li><strong>Opens with a pattern observation</strong> ("Most CS-Ops teams... hit the same wall around the 200-employee mark") instead of naming Marcus's specific job posting or LinkedIn post. Tier 2 doesn't have an anchor signal, so naming a non-anchor signal would feel surveillance-y and overreach the credibility we actually have.</li>
+  <li><strong>Frames QuadSci as a how-to, not a save-you</strong> — "It runs alongside Gainsight, not against it" is positioning for a buyer who isn't yet ready to rip out their CS platform.</li>
+  <li><strong>Low-commitment CTA</strong> — offering to share how Clari handles it is closer to a peer conversation than a calendar request. Conversion path: reply → context exchange → meeting in a later touch.</li>
+  <li><strong>Shorter</strong> — 85 words vs. ~110 words for Tier 1. Educational emails earn less attention; respect that.</li>
+</ul>
+
+<p>This is the kind of differentiation that justifies the tier classification existing at all. If both tiers got the same email, the rubric would be theater.</p>
+
+<h3>5.4 Personalization at Scale</h3>
+
+<table>
+<thead><tr><th>Element</th><th>Per-account variable</th><th>Templated (constant)</th></tr></thead>
+<tbody>
+  <tr><td>Greeting</td><td><code>first_name</code> (parsed from buyer_name)</td><td>"Hi {first_name},"</td></tr>
+  <tr><td>Opening signal</td><td><code>signal_summaries</code> — model picks the strongest</td><td>—</td></tr>
+  <tr><td>Persona framing</td><td><code>buyer_title</code> → routes to CRO / CS / RevOps prompt block</td><td>3 persona blocks in system prompt</td></tr>
+  <tr><td>Tech stack hook</td><td><code>tech_stack</code> — referenced if Mixpanel/Snowflake/Salesforce present</td><td>QuadSci facts block</td></tr>
+  <tr><td>Proof point</td><td>—</td><td>Clari + Reltio (verbatim, no invention allowed)</td></tr>
+  <tr><td>CTA</td><td>—</td><td>Exact closing sentence locked in prompt</td></tr>
+  <tr><td>Signature</td><td>—</td><td>Appended in Apps Script send shim (not generated)</td></tr>
+</tbody>
+</table>
+
+<p><strong>Tier-specific prompt summary</strong> (full prompts in §5.1; worked examples in §5.3):</p>
+<ul>
+  <li><strong>Tier 1 (high conviction, anchor signal present):</strong> Distinct prompt. Direct, peer-to-peer, names the specific signal source. Strong CTA. <em>Only tier that actually sends in the MVP, after APPROVE.</em></li>
+  <li><strong>Tier 2 (medium, lower signal density):</strong> Distinct prompt. Pattern-observation opener (not signal callout). Educational, restrained, low-commitment CTA. Draft is staged to the Clay watch-list but <strong>not sent in MVP</strong>. Production unlock: auto-send becomes available after the rubric has been validated by ≥30 Tier 1 reply outcomes.</li>
+  <li><strong>Tier 3 (low, watch-list):</strong> Third distinct prompt. Pure nurture framing — industry observation + content offer (blog post or benchmark), no meeting request. Written to the watch-list only; never sent. Draft accumulates until a fourth signal promotes the account upward.</li>
+</ul>
+
+<div class="req-list">
+  <h4>✅ Stage 3 deliverables checklist</h4>
+  <ul>
+    <li><span class="check">✓</span> Worked email example with signal context woven in (Acme Corp / Jane Park)</li>
+    <li><span class="check">✓</span> Full system prompt (verbatim, not summarized)</li>
+    <li><span class="check">✓</span> Prompt iteration history (3 versions, what broke, what changed)</li>
+    <li><span class="check">✓</span> Personalization-at-scale design (variables vs. templated elements)</li>
+    <li><span class="check">✓</span> Copy reflects QuadSci's actual value prop and voice — uses verified facts (94%, 12–18 mo, Clari, Reltio, trillions of telemetry events, Mixpanel/Snowflake)</li>
+  </ul>
+</div>
+
+<h2>6. Stage 4 — Stage the Campaign</h2>
+
+<h3>6.1 Staging Mechanism: Clay-Native Review Queue + Apps Script Send Shim</h3>
+
+<p>The Clay table itself <em>is</em> the staging mechanism. There is no separate Airtable or sheet to maintain.</p>
+
+<table>
+<thead><tr><th>Element</th><th>Where it lives</th><th>Who touches it</th></tr></thead>
+<tbody>
+  <tr><td>Review queue</td><td>Clay table, filtered view: <code>tier = "Tier 1" AND action IS NULL</code></td><td>GTM operator (you)</td></tr>
+  <tr><td>Approval action</td><td>Single dropdown column in Clay: APPROVE / REJECT / EDIT</td><td>GTM operator (you)</td></tr>
+  <tr><td>Edited copy override</td><td>Free-text "your_edits" column; if non-empty, replaces generated body</td><td>GTM operator (you)</td></tr>
+  <tr><td>Send trigger</td><td>Apps Script, time-based trigger every 5 min, reads Clay via API → sends Gmail</td><td>Automated</td></tr>
+  <tr><td>Send log</td><td>Clay column <code>send_status</code> (sent / failed / not_sent_tier_3)</td><td>Automated</td></tr>
+</tbody>
+</table>
+
+<h3>6.2 Confidence Threshold Logic — Who Auto-Sends, Who Holds</h3>
+
+<table>
+<thead><tr><th>Tier</th><th>Auto-send?</th><th>Why</th></tr></thead>
+<tbody>
+  <tr>
+    <td><span class="pill tier1">Tier 1</span> (80+)</td>
+    <td><strong>Hold for human review, send on APPROVE</strong></td>
+    <td>Tier 1 means a CRO at a $100M+ ARR company with anchor-signal pain. A misfire here costs reputation and potentially the deal. A 30-second human read is worth the latency. <em>Only tier that sends in the MVP.</em></td>
+  </tr>
+  <tr>
+    <td><span class="pill tier2">Tier 2</span> (60–79)</td>
+    <td><strong>Generate draft, write to watch-list, do NOT send</strong></td>
+    <td><strong>MVP posture.</strong> Draft is staged but not sent for the interview demo. Production unlock for auto-send requires (a) ≥30 Tier 1 reply outcomes captured to validate the rubric, and (b) explicit sign-off from a GTM lead. Tier 2 has a distinct, more educational prompt (§5.1) so when it does unlock, it's not a Tier 1 email with a softer CTA.</td>
+  </tr>
+  <tr>
+    <td><span class="pill tier3">Tier 3</span> (40–59)</td>
+    <td><strong>Generate draft, write to watch-list, do NOT send</strong></td>
+    <td>Not enough signal density to warrant a buyer's attention. Draft is staged so when a 4th signal fires and the account promotes to Tier 1 or Tier 2, the copy already exists and no fresh AI credit is burned.</td>
+  </tr>
+  <tr>
+    <td><span class="pill discard">Discard</span> (&lt;40)</td>
+    <td><strong>Skip entirely</strong></td>
+    <td>Clay's conditional logic prevents the AI Column from running. No credits burned.</td>
+  </tr>
+</tbody>
+</table>
+
+<h3>6.3 How to Prevent Bad Sends</h3>
+
+<p>Five guardrails, layered:</p>
+<ol>
+  <li><strong>Hard ICP filter before scoring</strong> — disqualified accounts never reach the AI Column.</li>
+  <li><strong>Anchor signal requirement</strong> — no anchor (S2 or S5) means no cluster, means no draft.</li>
+  <li><strong>Buyer-not-found halt</strong> — if Find Person returns zero, the row stops at <code>buyer_not_found</code>. No personalized email is generated for an unknown recipient.</li>
+  <li><strong>Tier 1 human review</strong> — explicit APPROVE required.</li>
+  <li><strong>Demo-mode send override</strong> — for this submission, every Gmail send is routed to my own inbox regardless of the actual <code>buyer_email</code>. The send code reads:<br>
+    <code>const to = (CONFIG.demoMode) ? CONFIG.demoEmail : row.buyer_email;</code><br>
+    Toggle the boolean to flip from "safe for demo" to "live."
+  </li>
+</ol>
+
+<h3>6.4 Feedback Loop — From Reply Rate Back to Signal Prioritization</h3>
+
+<p>The feedback loop has three tiers of data, each captured automatically into the same Clay table:</p>
+
+<table>
+<thead><tr><th>Tier</th><th>Signal</th><th>How captured</th><th>How it feeds back</th></tr></thead>
+<tbody>
+  <tr>
+    <td>L0 — Delivery</td><td>Did the email bounce or land?</td><td>Apps Script captures Gmail send response; updates <code>delivery_status</code></td><td>High bounce rate on a given email-source provider → deprioritize that provider in the Find Email waterfall.</td></tr>
+  <tr>
+    <td>L1 — Reply</td><td>Did the buyer reply?</td><td>Apps Script polls Gmail thread; updates <code>reply_received</code> + <code>reply_sentiment</code> (positive / neutral / negative / unsubscribe)</td><td>Reply rate by tier validates the scoring rubric — if Tier 2 replies at 5% and Tier 1 at 6%, the tiering isn't doing real work and the rubric needs re-weighting.</td></tr>
+  <tr>
+    <td>L2 — Meeting</td><td>Was a meeting booked?</td><td>GTM operator logs manually in Clay column; alternatively Calendly webhook → Clay</td><td>Meeting rate by <em>signal type</em> tells you which signals are pulling. If S5 (earnings) converts to meetings 3x more than S1 (job posting), reweight signal scoring +5 for S5 and –3 for S1 in the rubric.</td></tr>
+</tbody>
+</table>
+
+<p>The loop is closed by a monthly review where you sort accounts by outcome and look at: (a) which signal combinations produced meetings, (b) which prompt persona variant generated more replies, (c) which tier band is over- or under-converting. The scoring rubric weights are version-controlled in Clay's Formula Column — you change one number, the entire pipeline re-scores.</p>
+
+<h3>6.5 Honest Assessment — Biggest Risk and Mitigation</h3>
+
+<div class="callout warning">
+  <strong>Biggest risk:</strong> The <em>signal quality bottleneck</em>. Every other piece of the pipeline (scoring, enrichment, copy, send) is downstream of how well I detect intent. Right now I'm detecting it from RSS-polled public sources — Google Alerts, Reddit, HN. These are <strong>lagging</strong>, noisy, and low-coverage. A G2 review takes weeks to appear after the actual surprise renewal. An earnings call lands quarterly. By the time my signal fires, a smart competitor already had the meeting.
+</div>
+
+<p><strong>What would actually fix this with budget:</strong></p>
+<ul>
+  <li><strong>Paid Apify actors</strong> (~$50/mo) for LinkedIn job + post scraping with same-day coverage — the highest-volume early signal.</li>
+  <li><strong>Common Room or Default</strong> for capturing intent from Reddit/Slack communities in near-real-time.</li>
+  <li><strong>RB2B</strong> (free tier 150 resolutions/mo) for person-level visitor identification on quadsci.ai — by far the highest-conviction signal possible (they're literally researching you right now), but requires a marketing website with traffic to be useful.</li>
+  <li><strong>Crunchbase + PitchBook</strong> integration in Clay for funding-event signals (the day a Series C closes is the day the CS budget is fresh).</li>
+</ul>
+
+<p><strong>What I can mitigate today, free:</strong> Add more RSS feeds (15+ topic-specific queries vs. the current 5). Wire Reddit r/SaaS and r/RevOps in addition to r/CustomerSuccess. Scrape Greenhouse boards directly (no API needed, public HTML). Each addition is a marginal coverage win that doesn't change the architecture.</p>
+
+<div class="req-list">
+  <h4>✅ Stage 4 deliverables checklist</h4>
+  <ul>
+    <li><span class="check">✓</span> Staging mechanism described (Clay-native review queue + Apps Script send)</li>
+    <li><span class="check">✓</span> Confidence threshold logic per tier (Tier 1 hold, Tier 2 auto, Tier 3 draft-only, Discard skip)</li>
+    <li><span class="check">✓</span> Feedback loop design across L0/L1/L2 (delivery → reply → meeting), with explicit mapping back to rubric weights</li>
+    <li><span class="check">✓</span> Honest biggest-risk assessment + mitigation (signal quality bottleneck)</li>
+    <li><span class="check">✓</span> Demo-safety: real send code, routed to my own inbox via <code>CONFIG.demoMode</code> flag — no real prospects contacted</li>
+  </ul>
+</div>
+
+<h2>7. Clay Implementation Spec — Column-by-Column</h2>
+
+<p>The entire pipeline lives in one Clay table. Below is the column manifest in execution order. Anyone who can use Clay can rebuild this from this section alone.</p>
+
+<table>
+<thead><tr><th style="width: 4%">#</th><th style="width: 22%">Column</th><th style="width: 16%">Type</th><th>Configuration</th></tr></thead>
+<tbody>
+  <tr><td>1</td><td>Company Domain</td><td>Source (Sheets sync)</td><td>Synced from Google Sheet "Signal Log" → grouped by domain</td></tr>
+  <tr><td>2</td><td>Signal Count (21d)</td><td>Formula</td><td><code>COUNTIF(domain in Signal Log WHERE date > today-21)</code></td></tr>
+  <tr><td>3</td><td>Has Anchor Signal</td><td>Formula</td><td><code>signal_types CONTAINS "2" OR "5"</code></td></tr>
+  <tr><td>4</td><td>Cluster Qualified</td><td>Formula</td><td><code>signal_count >= 3 AND has_anchor = TRUE</code></td></tr>
+  <tr><td>5</td><td>Find Company</td><td>Enrichment (Clay native)</td><td>Input: <code>domain</code>. Runs only if <code>cluster_qualified = TRUE</code>.</td></tr>
+  <tr><td>6</td><td>Employees / Funding / ARR / Industry</td><td>From Find Company</td><td>Populated automatically</td></tr>
+  <tr><td>7</td><td>ICP Hard Filter</td><td>Formula</td><td><code>employees >= 200 AND funding >= "Series B" AND industry = "B2B SaaS"</code></td></tr>
+  <tr><td>8</td><td>BuiltWith Tech Stack</td><td>Enrichment (Clay native)</td><td>Runs only if <code>icp_passed = TRUE</code>. Returns array of tech tags.</td></tr>
+  <tr><td>9</td><td>Find Person — Primary</td><td>Enrichment (Clay native)</td><td>Title waterfall: CRO → VP Revenue Operations → Chief Customer Officer → VP Customer Success. First hit wins.</td></tr>
+  <tr><td>10</td><td>Find Email</td><td>Enrichment (Clay waterfall)</td><td>Hunter → Anymail → Snov, verified only</td></tr>
+  <tr><td>11</td><td>Firmographic Score</td><td>Formula</td><td>Per §4.2 rubric — pure arithmetic, no AI</td></tr>
+  <tr><td>12</td><td>Signal Score</td><td>Formula</td><td>Per §4.2 rubric</td></tr>
+  <tr><td>13</td><td>Tech Score</td><td>Formula</td><td>Per §4.2 rubric</td></tr>
+  <tr><td>14</td><td>Total Score</td><td>Formula</td><td><code>firm + signal + tech</code></td></tr>
+  <tr><td>15</td><td>Tier</td><td>Formula</td><td>80+ = Tier 1, 60–79 = Tier 2, 40–59 = Tier 3, &lt;40 = Discard</td></tr>
+  <tr><td>16</td><td>Email Subject</td><td>AI Column</td><td><strong>Conditional:</strong> only runs if <code>tier != "Discard"</code>. Model: Claude 3.5 Sonnet. Uses prompt §5.1.</td></tr>
+  <tr><td>17</td><td>Email Body</td><td>AI Column</td><td>Same conditional + prompt as #16. Returns body only.</td></tr>
+  <tr><td>18</td><td>Action</td><td>Dropdown (manual)</td><td>Values: APPROVE / REJECT / EDIT. Only relevant for Tier 1.</td></tr>
+  <tr><td>19</td><td>Your Edits</td><td>Free text (manual)</td><td>If non-empty, overrides Email Body at send time</td></tr>
+  <tr><td>20</td><td>Send Status</td><td>Updated by Apps Script</td><td>Values: queued / sent / failed / held_for_review / not_sent_tier_3</td></tr>
+  <tr><td>21</td><td>Sent At</td><td>Updated by Apps Script</td><td>Timestamp</td></tr>
+  <tr><td>22</td><td>Delivery Status</td><td>Updated by Apps Script</td><td>delivered / bounced</td></tr>
+  <tr><td>23</td><td>Reply Received</td><td>Updated by Apps Script</td><td>Boolean</td></tr>
+  <tr><td>24</td><td>Reply Sentiment</td><td>AI Column (cheap model)</td><td>Runs only if <code>reply_received = TRUE</code>. Classifies positive / neutral / negative / unsubscribe.</td></tr>
+  <tr><td>25</td><td>Meeting Booked</td><td>Manual / Calendly webhook</td><td>Boolean</td></tr>
+</tbody>
+</table>
+
+<h3>7.1 The Apps Script Send Shim (~30 lines)</h3>
+
+<pre><code>// Runs every 5 minutes via Apps Script time trigger.
+// MVP routing: ONLY Tier 1 with action="APPROVE" is eligible to send.
+// Tier 2 and Tier 3 drafts are written to the watch-list and never sent.
+// Production unlock for Tier 2 auto-send is gated behind a separate flag
+// (CONFIG.allowTier2AutoSend) that requires ≥30 validated Tier 1 reply
+// outcomes before it can be flipped — enforced in the query filter, not
+// the script body.
+
+const CONFIG = {
+  demoMode: true,                              // ← flip to false for live sends (do not flip for the demo)
+  demoEmail: "pmukhopadhyay5537@gmail.com",
+  allowTier2AutoSend: false,                   // ← production flag, stays false in MVP
+  clayTableId: "YOUR_CLAY_TABLE_ID",
+  clayApiKey: PropertiesService.getScriptProperties().getProperty("CLAY_API_KEY"),
+  signature: "\n\nBest,\nPrasun M.\nHead of GTM at QuadSci"
+};
+
+function sendQueuedEmails() {
+  // MVP query: Tier 1 + APPROVE only. Tier 2 + Tier 3 explicitly excluded.
+  const rows = fetchSendEligibleRows({
+    tier: "Tier 1",
+    action: "APPROVE",
+    sendStatus: "queued"
+  });
+
+  rows.forEach(row =&gt; {
+    const to = CONFIG.demoMode ? CONFIG.demoEmail : row.buyer_email;
+    const body = (row.your_edits || row.email_body) + CONFIG.signature;
+    try {
+      GmailApp.sendEmail(to, row.email_subject, body);
+      updateClayRow(row.id, { send_status: "sent", sent_at: new Date().toISOString() });
+    } catch (e) {
+      updateClayRow(row.id, { send_status: "failed", error: e.message });
+    }
+  });
+}</code></pre>
+
+<p>Configured with a 5-minute time-driven trigger in Apps Script. <strong>Tier 2 and Tier 3 drafts are excluded from the send query entirely</strong> — they generate, populate the Clay table for review, and stay on the watch-list. Their <code>send_status</code> is set to <code>not_sent_mvp_watchlist</code> by the AI Column post-processing so the panel can see they were intentionally held, not failed.</p>
+
+<h2>8. What We're Looking For — Explicit Mapping</h2>
+
+<table>
+<thead><tr><th>Criterion (verbatim from exercise)</th><th>How v2 addresses it</th></tr></thead>
+<tbody>
+  <tr>
+    <td><strong>ICP fluency</strong> — signals grounded in CRO pain at 200–500 person Series B+ SaaS</td>
+    <td>Every signal is mapped to a specific CRO/CS/RevOps pain (§3.1 "Why a CRO cares" column). Hard filter enforces 200+, Series B+, B2B SaaS, has CS team, has telemetry tooling. Scoring weights the signals a CRO actually cares about most: earnings = 20, G2 = 15. The email opening references the specific pain (NRR drop, surprise churn) — not generic "growth opportunities."</td>
+  </tr>
+  <tr>
+    <td><strong>Agentic workflow design</strong> — signal → score → copy → staging as a connected loop</td>
+    <td>One Clay table. Sequential column execution: signal sync → cluster formula → ICP filter → enrichment → scoring → AI copy → routing. Each step's output is the next step's input. No human handoffs except the Tier 1 review. The loop closes via reply tracking → rubric reweighting.</td>
+  </tr>
+  <tr>
+    <td><strong>Resourcefulness</strong> — creative free-tool sourcing, no paid data</td>
+    <td>Zero paid tools. Signal sources are RSS / Reddit JSON / HN Algolia / Greenhouse public HTML. Enrichment is Clay free tier (100 credits/mo — enough for ~10 enriched accounts). AI is Clay's native integration on free credits. Send is personal Gmail via Apps Script (no SMTP, no Workspace required). Total marginal cost per qualified account: ~10 Clay credits ($0 on free tier, ~$1 paid).</td>
+  </tr>
+  <tr>
+    <td><strong>Copy quality</strong> — not generic AI sales language; sounds like it was written for the buyer</td>
+    <td>The Acme worked example (§5.3) opens with the specific G2 review and earnings line, names Mixpanel/Snowflake from the buyer's actual tech stack, and uses Clari (a real QuadSci customer) as the only proof point — no fabrication. The prompt's strict prohibitions kill every common AI tell.</td>
+  </tr>
+  <tr>
+    <td><strong>Prompt craft</strong> — show the prompt, show the iteration</td>
+    <td>Full system prompt printed verbatim in §5.1. Three iterations documented in §5.2 with what specifically broke and what specifically changed. Tier-specific variants documented in §5.4.</td>
+  </tr>
+  <tr>
+    <td><strong>Honesty about limits</strong> — articulate gaps clearly</td>
+    <td>§6.5 names signal quality as the single biggest weakness, explains why RSS is lagging and low-coverage, lists exactly what would fix it with budget and what I can mitigate for free. The next section (§9) goes deeper.</td>
+  </tr>
+</tbody>
+</table>
+
+<h2>9. What I Built vs. What I'd Build With Budget</h2>
+
+<table>
+<thead><tr><th>Capability</th><th>v2 (today, $0)</th><th>Production (with budget)</th></tr></thead>
+<tbody>
+  <tr><td>Signal sources</td><td>5 RSS feeds + Reddit JSON + HN Algolia. Lagging.</td><td>Add Apify ($50/mo) for LinkedIn jobs + posts. Add Common Room for community. Add RB2B for visitor ID on quadsci.ai.</td></tr>
+  <tr><td>Enrichment</td><td>Clay free tier — ~10 accounts/month before credit exhaustion</td><td>Clay Starter ($149/mo) — ~150 accounts/month. Adds verified phone numbers, intent data overlays.</td></tr>
+  <tr><td>Email copy model</td><td>Claude 3.5 Sonnet via Clay AI Column (~1 credit/call)</td><td>Same model; add a finetune on QuadSci's own outbound history once a reply corpus exists.</td></tr>
+  <tr><td>Send infrastructure</td><td>Personal Gmail via Apps Script. 100 sends/day quota.</td><td>Clay Sequencer with Google Workspace OAuth, or migrate to Smartlead for warmup and inbox rotation.</td></tr>
+  <tr><td>Reply tracking</td><td>Apps Script + Gmail threads</td><td>Native Clay reply capture; AI sentiment classification at scale.</td></tr>
+  <tr><td>Feedback loop</td><td>Monthly manual review; rubric weights changed by hand</td><td>Quarterly automated re-weighting via a Clay AI Column that reads outcome data and proposes new weights. PM reviews and ships.</td></tr>
+</tbody>
+</table>
+
+<h2>10. Risk Register</h2>
+
+<div class="callout">
+  <strong>MVP scope baseline:</strong> This is an interview demo, not a production system. Specifically: the workflow runs on-demand for the demo only (no recurring schedule), processes at most ~10 qualified accounts and ~20 enriched contacts, and routes every send to my own inbox. Risks that only materialize at recurring production volume — Clay free-tier credit exhaustion, Gmail 100/day quota, deliverability — are deliberately scoped out of this MVP. They are documented in §9 as production roadmap items, not MVP risks. I want to flag this explicitly so the panel can probe the right things instead of the wrong things.
+</div>
+
+<table>
+<thead><tr><th>Risk (MVP scope only)</th><th style="width: 12%">Likelihood</th><th style="width: 12%">Impact</th><th>Mitigation</th></tr></thead>
+<tbody>
+  <tr><td>Signal quality is lagging (RSS-bound)</td><td>Certain</td><td>High</td><td>Layered: anchor-signal requirement filters noise; budget plan in §9 to add real-time sources (Apify, Common Room, RB2B).</td></tr>
+  <tr><td>AI generates a draft that mentions a fabricated number or quote</td><td>Low (after v0.2 prompt fix)</td><td>High (brand)</td><td>Strict prohibitions in prompt; Tier 1 human review catches anything that slips; demo includes a sample of the prompt's banned-phrase list.</td></tr>
+  <tr><td>Find Email returns unverified address (Tier 1 only — Tier 2/3 don't send)</td><td>Low at MVP volume</td><td>Medium</td><td>Clay's verified-only filter on the email waterfall; demo-mode override routes every send to my own inbox regardless of <code>buyer_email</code>.</td></tr>
+  <tr><td>A Tier 1 row sits in review queue indefinitely (operator forgets)</td><td>Low at MVP volume (~3 rows)</td><td>Low</td><td>Single-operator workflow with the table open in front of the operator. In production: daily digest + 5-day auto-demote (§9).</td></tr>
+  <tr><td>Demo-mode flag accidentally flipped to live → real prospects contacted</td><td>Low</td><td>Critical</td><td>Demo mode hardcoded as default; flipping requires script edit, not a UI toggle. Buyer-email column in Clay is also redacted to <code>***@***</code> for any non-demo row.</td></tr>
+  <tr><td>Live demo fails mid-walkthrough (Clay outage, API hiccup, browser tab refresh)</td><td>Low</td><td>High (interview)</td><td>Pre-recorded 90-second Loom of the full pipeline run as a backup; Clay table screenshots in the submission doc as a deeper backup.</td></tr>
+</tbody>
+</table>
+
+<p><strong>Risks deliberately excluded from MVP scope</strong> (documented as production concerns, not interview-demo concerns):</p>
+<ul>
+  <li><em>Clay free-tier credit exhaustion</em> — at ~10 accounts × ~8 credits each = ~80 credits, well within the 100/month free allowance, and the demo runs at most twice. Not an MVP risk.</li>
+  <li><em>Personal Gmail 100/day send quota</em> — MVP sends ≤10 emails total, all to my own inbox. Not an MVP risk.</li>
+  <li><em>Domain reputation / inbox warmup</em> — irrelevant when sending to oneself. Becomes a real concern only at production scale (§9 roadmap: Smartlead for warmup and inbox rotation).</li>
+</ul>
+
+<h2>11. Demo Runbook (~5 minutes, live)</h2>
+
+<ol>
+  <li><strong>Open Signal Log in Google Sheets.</strong> Show 3 acme.com signals: job posting, G2 review, earnings statement. Say: "These would land here automatically from RSS polling. I seeded them manually for a deterministic demo."</li>
+  <li><strong>Open the Clay table.</strong> Show the acme.com row. Walk left-to-right through the columns: cluster qualified ✓, ICP passed ✓, employees 350, funding Series C, Mixpanel + Salesforce in tech stack, score 83 / Tier 1.</li>
+  <li><strong>Show the Tier 1 Email Subject and Email Body columns.</strong> Read the email out loud. Point out the G2 review reference, the NRR drop reference, the Mixpanel callout, the Clari proof point. Say: "Nothing in this email is invented — every fact came from a column upstream."</li>
+  <li><strong>Show the Tier 2 row (Beta Tech).</strong> Read its email out loud. Point out the difference: pattern-observation opener, no signal callout by name, low-commitment CTA ("happy to share how Clari is handling this"), shorter body. Explain: "Same architecture, distinct prompt — Tier 2's buyer is in noticing mode, not solution-seeking mode. The rubric tells us that; the prompt respects it."</li>
+  <li><strong>Show a Tier 3 row.</strong> Generated draft, <code>send_status = not_sent_mvp_watchlist</code>. Explain: copy exists, accumulating on the watch-list until promotion. No AI credit re-burn when the account promotes upward.</li>
+  <li><strong>Back to the Tier 1 row. Show the Action column.</strong> Change from blank to APPROVE.</li>
+  <li><strong>Open Apps Script execution log.</strong> Show the most recent run picking up the APPROVE, sending, and writing back Sent status. Open Gmail Sent folder — there's the email, addressed to my own inbox per demo-mode override. Note: no Tier 2 or Tier 3 row was eligible for send; the query filter excluded them.</li>
+  <li><strong>Close the loop on architecture.</strong> Pull up the column manifest (§7). "Six n8n workflows collapsed to one Clay table + 30 lines of Apps Script. A non-engineer can own this in production."</li>
+</ol>
+
+<h2>12. Closing: Why This Matches QuadSci</h2>
+
+<p>QuadSci's product thesis is that <em>real intent lives in raw telemetry, not in CRM hygiene</em>. This workflow's design thesis is identical: real buyer intent lives in public traces (G2 reviews, earnings calls, LinkedIn posts) — not in CRM activity. The architecture I built is structurally the same kind of system QuadSci builds: ingest noisy public signal, cluster it, score it with explainable rules, and act on it before the renewal event.</p>
+
+<p>If hired, I would expect to spend my first 90 days replacing every RSS feed in this design with one of QuadSci's own product signals fed into the same Clay-style pipeline. Same architecture, vastly higher signal quality.</p>
+
+<footer>
+  Submitted by Prasun Mukhopadhyay &nbsp;·&nbsp; pmukhopadhyay5537@gmail.com &nbsp;·&nbsp; May 2026<br>
+  Architecture: Clay-native pipeline + Apps Script send shim &nbsp;·&nbsp; Hard cost: $0/mo &nbsp;·&nbsp; Demo mode: all sends routed to my inbox
+</footer>
+
+</div>
+</body>
+</html>

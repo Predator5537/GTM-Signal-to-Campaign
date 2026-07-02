@@ -1,0 +1,610 @@
+{
+  "name": "WF3 — Cluster Detector (Every 6 Hours)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "aee7dc0b-7d80-4a27-81fd-b59a0915daa9",
+      "name": "Schedule Trigger — Every 6h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1680,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Signal Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "7a61dc4c-f49f-47be-b2ec-f792edc8aa52",
+      "name": "Sheets — Read Signal Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -1440,
+        208
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "mCitxoRY2r1cdcjh",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Group signals by Company Domain.\n// Return only companies that have 3+ signals within the last 21 days.\n\nconst items = $input.all();\nconst now = new Date();\nconst cutoff = new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000); // 21 days ago\n\nconst groups = {};\n\nfor (const item of items) {\n  const domain  = (item.json['Company Domain'] || '').trim().toLowerCase();\n  const dateStr = item.json['Date'] || '';\n  const date    = new Date(dateStr);\n\n  // Skip rows with no domain or dates older than 21 days\n  if (!domain || date < cutoff) continue;\n\n  if (!groups[domain]) {\n    groups[domain] = {\n      domain,\n      name: item.json['Company Name'] || '',\n      signals: [],\n      types: new Set()\n    };\n  }\n\n  groups[domain].signals.push(item.json['Signal Summary'] || '');\n  groups[domain].types.add(String(item.json['Signal Type'] || ''));\n}\n\n// Only keep clusters with 3+ signals AND at least one anchor signal (type 2 or 5)\n// Anchor: Signal 2 = G2 review (forecast miss/surprise churn) — highest direct USP connection\n// Anchor: Signal 5 = earnings/investor statement citing churn or NRR\n// Rationale: job postings and LinkedIn posts alone are too noisy to justify enrichment spend.\n// Requiring an anchor grounds the cluster in verifiable evidence of the pain QuadSci solves.\nconst clusters = Object.values(groups)\n  .filter(g => {\n    if (g.signals.length < 3) return false;\n    const hasAnchor = [...g.types].some(t => t === '2' || t === '5');\n    return hasAnchor;\n  })\n  .map(g => ({\n    json: {\n      company_domain: g.domain,\n      company_name: g.name,\n      signal_count: g.signals.length,\n      signal_types: [...g.types].sort().join(','),\n      signal_summaries: g.signals.join(' | ')\n    }\n  }));\n\nif (clusters.length === 0) {\n  // Return a special no-op item so the workflow doesn't error\n  return [{ json: { __no_clusters: true } }];\n}\n\nreturn clusters;"
+      },
+      "id": "0227f09a-454a-48ed-876b-7b33bca20387",
+      "name": "Code — Detect Signal Clusters",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1200,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "check-no-clusters",
+              "leftValue": "={{ $json.__no_clusters }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0558e6cf-3132-46c8-b800-e10776fe16de",
+      "name": "IF — Any Clusters Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1330525134,
+          "mode": "list",
+          "cachedResultName": "Scored Accounts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk/edit#gid=1330525134"
+        },
+        "options": {}
+      },
+      "id": "0e82d971-8f9f-4dfc-8b76-7f04d01e78b6",
+      "name": "Sheets — Read Scored Accounts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -720,
+        112
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "mCitxoRY2r1cdcjh",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "notes": "alwaysOutputData=true is critical: when Scored Accounts is empty (first-ever run), Sheets read returns 0 items and would kill the downstream chain. This forces at least one item out so the dedup Code node executes."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check which clusters already exist in Scored Accounts (dedup).\n//\n// Why we pull cluster data from $('Code — Detect Signal Clusters') rather than $input:\n// - $input here is downstream of 'Sheets — Read Scored Accounts', which contains existing\n//   scored-account rows, NOT the cluster payload we care about.\n// - The cluster payload lives upstream at 'Code — Detect Signal Clusters' and must be\n//   reached by name, otherwise it's lost when Sheets node replaces input with its rows.\n//\n// Why we filter empty items from existing rows:\n// - 'Sheets — Read Scored Accounts' has alwaysOutputData=true so it emits an item even when\n//   the sheet is empty. Without filtering, an empty item would falsely register as a row.\n\nconst clusters = $('Code — Detect Signal Clusters').all()\n  .filter(c => c.json && !c.json.__no_clusters && c.json.company_domain);\n\nif (clusters.length === 0) {\n  return [];\n}\n\nconst existingRows = $('Sheets — Read Scored Accounts').all()\n  .filter(r => r.json && r.json['Company Domain']);\nconst existingDomains = new Set(\n  existingRows.map(r => String(r.json['Company Domain']).trim().toLowerCase())\n);\n\nreturn clusters.map(c => ({\n  json: {\n    ...c.json,\n    already_exists: existingDomains.has(String(c.json.company_domain).trim().toLowerCase())\n  }\n}));"
+      },
+      "id": "0289a0a6-b5d0-47a3-9e13-6925175b492a",
+      "name": "Code — Check If Already Exists",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "check-duplicate",
+              "leftValue": "={{ $json.already_exists }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "86ea3413-33cb-403d-8f4d-c66e254d831d",
+      "name": "IF — New Account?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Scored Accounts",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date Flagged": "={{ $now.toISODate() }}",
+            "Company Domain": "={{ $json.company_domain }}",
+            "Company Name": "={{ $json.company_name }}",
+            "Signal Count": "={{ $json.signal_count }}",
+            "Signal Types": "={{ $json.signal_types }}",
+            "Signal Summaries": "={{ $json.signal_summaries }}",
+            "Status": "=Pending Enrichment"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date Flagged",
+              "displayName": "Date Flagged",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company Domain",
+              "displayName": "Company Domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Signal Count",
+              "displayName": "Signal Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Signal Types",
+              "displayName": "Signal Types",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Signal Summaries",
+              "displayName": "Signal Summaries",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Employee Count",
+              "displayName": "Employee Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Funding Stage",
+              "displayName": "Funding Stage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Estimated ARR",
+              "displayName": "Estimated ARR",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tech Stack",
+              "displayName": "Tech Stack",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CS Headcount",
+              "displayName": "CS Headcount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Firmographic Score",
+              "displayName": "Firmographic Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Signal Score",
+              "displayName": "Signal Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tech Score",
+              "displayName": "Tech Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total Score",
+              "displayName": "Total Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tier",
+              "displayName": "Tier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Buyer Name",
+              "displayName": "Buyer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Buyer Title",
+              "displayName": "Buyer Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Buyer Email",
+              "displayName": "Buyer Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email Verified",
+              "displayName": "Email Verified",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date Added",
+              "displayName": "Date Added",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Signal Summary",
+              "displayName": "Signal Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Generated Email",
+              "displayName": "Generated Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Your Action",
+              "displayName": "Your Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Your Notes",
+              "displayName": "Your Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Send Date",
+              "displayName": "Send Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reply Date",
+              "displayName": "Reply Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Outcome",
+              "displayName": "Outcome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "1e6b8cfc-39dd-4267-977c-aaff4bcafcad",
+      "name": "Sheets — Add to Scored Accounts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "mCitxoRY2r1cdcjh",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger — Every 6h": {
+      "main": [
+        [
+          {
+            "node": "Sheets — Read Signal Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets — Read Signal Log": {
+      "main": [
+        [
+          {
+            "node": "Code — Detect Signal Clusters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Detect Signal Clusters": {
+      "main": [
+        [
+          {
+            "node": "IF — Any Clusters Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Any Clusters Found?": {
+      "main": [
+        [
+          {
+            "node": "Sheets — Read Scored Accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets — Read Scored Accounts": {
+      "main": [
+        [
+          {
+            "node": "Code — Check If Already Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Check If Already Exists": {
+      "main": [
+        [
+          {
+            "node": "IF — New Account?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — New Account?": {
+      "main": [
+        [
+          {
+            "node": "Sheets — Add to Scored Accounts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "bd430fc6-ac51-4b04-80a2-ac6c8dc86edd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2937f53cf7d4f752601b86a3c3b2ce9edd949a058b20d977b6b8328c69cff778"
+  },
+  "id": "7fvnNZA8PbwrSKPG",
+  "tags": [
+    {
+      "updatedAt": "2026-05-25T23:16:57.705Z",
+      "createdAt": "2026-05-25T23:16:57.705Z",
+      "id": "lRKTKUtOG1wLcOi4",
+      "name": "quadsci"
+    }
+  ]
+}

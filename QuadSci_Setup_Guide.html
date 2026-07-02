@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuadSci — Build Setup Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root {
+    --purple: #6B46C1; --purple-light: #F3F0FF; --purple-mid: #EDE9FE;
+    --dark: #1A1A2E; --mid: #4A5568; --border: #E2E8F0;
+    --green: #16A34A; --green-bg: #F0FDF4;
+    --amber: #D97706; --amber-bg: #FFFBEB;
+    --red: #DC2626; --red-bg: #FEF2F2;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.7; color: var(--dark); background: #FAFAFA; }
+
+  .cover { background: linear-gradient(135deg, #1A1A2E 0%, #6B46C1 100%); color: white; padding: 48px 60px 40px; text-align: center; }
+  .cover-logo { font-size: 40px; font-weight: 800; letter-spacing: -1px; }
+  .cover-logo span { color: #C4B5FD; }
+  .cover-sub { font-size: 18px; font-weight: 300; margin-top: 8px; opacity: 0.85; }
+  .cover-meta { margin-top: 14px; font-size: 12px; opacity: 0.45; }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 40px 40px 80px; }
+  h1 { font-size: 22px; font-weight: 700; color: var(--purple); margin: 44px 0 12px; padding-bottom: 8px; border-bottom: 3px solid var(--purple); }
+  h1:first-child { margin-top: 0; }
+  h2 { font-size: 16px; font-weight: 700; color: var(--dark); margin: 24px 0 8px; }
+  p { margin-bottom: 10px; }
+  code { font-family: 'JetBrains Mono', monospace; background: #F3F0FF; padding: 1px 6px; border-radius: 3px; font-size: 12px; color: #6B46C1; }
+
+  .progress { display: flex; gap: 0; margin: 20px 0; border-radius: 8px; overflow: hidden; border: 1.5px solid var(--border); }
+  .prog-item { flex: 1; padding: 14px 12px; text-align: center; font-size: 12px; font-weight: 600; }
+  .prog-item .num { font-size: 18px; font-weight: 800; display: block; margin-bottom: 2px; }
+  .done { background: var(--green-bg); color: var(--green); }
+  .todo { background: var(--amber-bg); color: var(--amber); }
+  .later { background: #F3F4F6; color: #9CA3AF; }
+
+  .step-card { border: 1.5px solid var(--border); border-radius: 10px; margin: 14px 0; overflow: hidden; }
+  .step-head { background: var(--dark); color: white; padding: 12px 18px; display: flex; align-items: center; gap: 14px; }
+  .step-num { font-size: 22px; font-weight: 800; color: #A78BFA; min-width: 32px; }
+  .step-title { font-size: 15px; font-weight: 700; color: #EDE9FE; }
+  .step-body { padding: 16px 18px; background: white; }
+  .step-body p { margin-bottom: 8px; }
+  .step-body ol, .step-body ul { padding-left: 18px; margin-bottom: 10px; }
+  .step-body li { margin-bottom: 4px; }
+
+  .callout { padding: 12px 16px; border-radius: 6px; margin: 12px 0; font-size: 13px; }
+  .callout-green  { background: var(--green-bg);  border-left: 4px solid var(--green); }
+  .callout-amber  { background: var(--amber-bg);  border-left: 4px solid var(--amber); }
+  .callout-purple { background: var(--purple-light); border-left: 4px solid var(--purple); }
+  .callout-red    { background: var(--red-bg);    border-left: 4px solid var(--red); }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 18px; font-size: 13px; }
+  th { background: var(--purple); color: white; padding: 9px 13px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
+  td { padding: 8px 13px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  td code { font-size: 11.5px; }
+  tr:hover td { background: #FAFAFF; }
+
+  .file-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; margin: 6px 0; background: white; }
+  .file-icon { font-size: 20px; }
+  .file-name { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: var(--purple); flex: 1; }
+  .file-desc { font-size: 12px; color: var(--mid); }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .badge-green  { background: #16A34A; color: white; }
+  .badge-amber  { background: var(--amber); color: white; }
+  .badge-purple { background: var(--purple); color: white; }
+
+  .placeholder-box { background: var(--dark); border-radius: 8px; padding: 16px 20px; margin: 14px 0; }
+  .placeholder-box .label { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #A78BFA; margin-bottom: 10px; }
+  .ph-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+  .ph-token { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #FCD34D; min-width: 280px; }
+  .ph-what { font-size: 12px; color: #C4B5FD; }
+  .ph-files { font-size: 11px; color: #7C6FAA; margin-top: 2px; }
+
+  .wf-chain { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 10px 0; }
+  .wf-node { background: var(--purple-mid); border: 1px solid var(--purple); border-radius: 5px; padding: 5px 10px; font-size: 11px; font-weight: 600; color: var(--purple); white-space: nowrap; }
+  .wf-arrow { color: #9CA3AF; font-size: 16px; padding: 0 4px; }
+
+  .checklist { margin: 10px 0; }
+  .check-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 7px; }
+  .check-box { width: 18px; height: 18px; border: 2px solid var(--purple); border-radius: 3px; flex-shrink: 0; margin-top: 1px; }
+  .check-box.done-box { background: var(--green); border-color: var(--green); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 700; }
+  .check-text { font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cover-logo">Quad<span>Sci</span></div>
+  <div class="cover-sub">Build Setup Guide — Everything You Need to Go Live</div>
+  <div class="cover-meta">Generated May 2026 · $0/month stack · 6 workflows pre-built</div>
+</div>
+
+<div class="container">
+
+<!-- ── PROGRESS ───────────────────────────────────────────── -->
+<h1>Where You Are Right Now</h1>
+
+<div class="progress">
+  <div class="prog-item done"><span class="num">✓</span>Workflows<br>Built</div>
+  <div class="prog-item todo"><span class="num">2</span>Accounts<br>Still Needed</div>
+  <div class="prog-item todo"><span class="num">~</span>Placeholders<br>to Fill In</div>
+  <div class="prog-item later"><span class="num">→</span>Activate<br>&amp; Go Live</div>
+</div>
+
+<p>All 6 n8n workflows have been pre-built as importable JSON files. You already have n8n, OpenRouter, and Clay set up. The two remaining accounts to create are <strong>Apify</strong> (for LinkedIn scraping) and <strong>Apollo.io</strong> (for Tier 2 sequences).</p>
+
+<!-- ── ALL FILES ───────────────────────────────────────────── -->
+<h1>Your Files (All Saved in This Folder)</h1>
+
+<div class="file-row"><div class="file-icon">📄</div><div class="file-name">setup_google_sheet.gs</div><div class="file-desc">Google Apps Script — run once to auto-create your spreadsheet with all 3 tabs and columns</div><span class="badge badge-green">STEP 1</span></div>
+<div class="file-row"><div class="file-icon">⚙️</div><div class="file-name">wf1_signal_collector.json</div><div class="file-desc">n8n Workflow 1 — Daily 7am: polls 5 Google Alerts RSS feeds + Reddit → Signal Log</div><span class="badge badge-purple">IMPORT</span></div>
+<div class="file-row"><div class="file-icon">⚙️</div><div class="file-name">wf2_apify_scraper.json</div><div class="file-desc">n8n Workflow 2 — Monday 9am: LinkedIn Jobs scraper via Apify → Signal Log</div><span class="badge badge-purple">IMPORT</span></div>
+<div class="file-row"><div class="file-icon">⚙️</div><div class="file-name">wf3_cluster_detector.json</div><div class="file-desc">n8n Workflow 3 — Every 6h: detects 3+ signal clusters → Scored Accounts → Clay enrichment</div><span class="badge badge-purple">IMPORT</span></div>
+<div class="file-row"><div class="file-icon">⚙️</div><div class="file-name">wf4_ai_scorer.json</div><div class="file-desc">n8n Workflow 4 — Triggered by Clay: scores account 0–100, assigns tier, triggers copy gen</div><span class="badge badge-purple">IMPORT</span></div>
+<div class="file-row"><div class="file-icon">⚙️</div><div class="file-name">wf5_copy_generator.json</div><div class="file-desc">n8n Workflow 5 — Triggered by WF4: writes personalized email → Review Queue tab</div><span class="badge badge-purple">IMPORT</span></div>
+<div class="file-row"><div class="file-icon">⚙️</div><div class="file-name">wf6_approval_monitor.json</div><div class="file-desc">n8n Workflow 6 — Every 15 min: checks for APPROVE in Review Queue → sends via Gmail</div><span class="badge badge-purple">IMPORT</span></div>
+<div class="file-row"><div class="file-icon">📋</div><div class="file-name">QuadSci_Build_Roadmap.html</div><div class="file-desc">Full day-by-day build guide with all context (keep open for reference)</div><span class="badge badge-amber">REFERENCE</span></div>
+
+<!-- ── STEP 1: SHEET ───────────────────────────────────────── -->
+<h1>Step 1 — Create the Google Sheet (5 minutes)</h1>
+
+<div class="step-card">
+  <div class="step-head"><div class="step-num">1</div><div class="step-title">Run the Apps Script to auto-create your spreadsheet</div></div>
+  <div class="step-body">
+    <ol>
+      <li>Go to <strong>script.google.com</strong> in your browser</li>
+      <li>Click <strong>+ New project</strong></li>
+      <li>Delete all the default code in the editor</li>
+      <li>Open <code>setup_google_sheet.gs</code> from this folder — copy the entire contents and paste it in</li>
+      <li>Click the <strong>▶ Run</strong> button (or press <kbd>Ctrl+R</kbd>)</li>
+      <li>When prompted, click <strong>Review permissions → Allow</strong></li>
+      <li>When done, a popup will appear showing your <strong>Spreadsheet ID</strong> — copy it immediately</li>
+    </ol>
+    <div class="callout callout-amber">
+      ⚠️ <strong>Save your Spreadsheet ID.</strong> It looks like: <code>1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms</code><br>
+      You will paste this into all 6 workflow JSON files before importing them.
+    </div>
+  </div>
+</div>
+
+<!-- ── STEP 2: ACCOUNTS ───────────────────────────────────── -->
+<h1>Step 2 — Create the 2 Remaining Accounts (15 minutes)</h1>
+
+<table>
+  <tr><th>TOOL</th><th>WHERE</th><th>WHAT YOU NEED FROM IT</th></tr>
+  <tr>
+    <td><strong>Apify</strong></td>
+    <td>apify.com → Sign up free</td>
+    <td>Your <strong>Personal API Token</strong> — Settings → Integrations → Personal API tokens → Copy</td>
+  </tr>
+  <tr>
+    <td><strong>Apollo.io</strong></td>
+    <td>apollo.io → Sign up free</td>
+    <td>Just the account — no API key needed. You'll use the web UI only.</td>
+  </tr>
+</table>
+
+<!-- ── STEP 3: GOOGLE ALERTS ──────────────────────────────── -->
+<h1>Step 3 — Create 5 Google Alerts and Get Their RSS URLs (10 minutes)</h1>
+
+<p>Go to <strong>google.com/alerts</strong>. For each alert below, paste the search query, set delivery to <strong>RSS feed</strong>, click Create. Then click the RSS icon and copy the feed URL.</p>
+
+<table>
+  <tr><th>#</th><th>SEARCH QUERY — COPY EXACTLY</th><th>SIGNAL TYPE</th><th>PASTE RSS URL HERE</th></tr>
+  <tr><td>Alert 1</td><td><code>site:greenhouse.io OR site:lever.co "Gainsight" OR "ChurnZero"</code></td><td>1 – Job Postings</td><td><em>(your URL)</em></td></tr>
+  <tr><td>Alert 2</td><td><code>"Gainsight" OR "ChurnZero" "forecast" OR "churn" OR "renewal" site:g2.com</code></td><td>2 – G2 Reviews</td><td><em>(your URL)</em></td></tr>
+  <tr><td>Alert 3</td><td><code>"NRR" OR "net revenue retention" OR "renewal forecast" "blind spot" OR "surprise"</code></td><td>3 – NRR Pain</td><td><em>(your URL)</em></td></tr>
+  <tr><td>Alert 4</td><td><code>hires OR appoints "VP" OR "Director" "Customer Success" OR "Revenue Operations"</code></td><td>4 – Leadership Hires</td><td><em>(your URL)</em></td></tr>
+  <tr><td>Alert 5</td><td><code>"net revenue retention" OR "NRR" "earnings" OR "investor letter" OR "10-K"</code></td><td>5 – Earnings/Churn</td><td><em>(your URL)</em></td></tr>
+</table>
+
+<!-- ── STEP 4: PLACEHOLDERS ───────────────────────────────── -->
+<h1>Step 4 — Fill in Placeholders Before Importing (10 minutes)</h1>
+
+<p>Open each <code>.json</code> file in a text editor (Notepad works fine). Find and replace each placeholder below using <kbd>Ctrl+H</kbd>.</p>
+
+<div class="placeholder-box">
+  <div class="label">PLACEHOLDERS TO REPLACE IN ALL 6 WORKFLOW JSON FILES</div>
+
+  <div class="ph-row">
+    <div>
+      <div class="ph-token">YOUR_SPREADSHEET_ID</div>
+      <div class="ph-what">Replace with the ID you got in Step 1 from the Apps Script popup</div>
+      <div class="ph-files">All 6 workflow files (wf1 through wf6)</div>
+    </div>
+  </div>
+
+  <div class="ph-row">
+    <div>
+      <div class="ph-token">REPLACE_WITH_GOOGLE_ALERT_RSS_URL_1</div>
+      <div class="ph-what">Your RSS URL for Alert 1 (Job Postings) — from Step 3</div>
+      <div class="ph-files">wf1_signal_collector.json only</div>
+    </div>
+  </div>
+  <div class="ph-row">
+    <div>
+      <div class="ph-token">REPLACE_WITH_GOOGLE_ALERT_RSS_URL_2</div>
+      <div class="ph-what">Your RSS URL for Alert 2 (G2 Reviews)</div>
+      <div class="ph-files">wf1_signal_collector.json only</div>
+    </div>
+  </div>
+  <div class="ph-row">
+    <div>
+      <div class="ph-token">REPLACE_WITH_GOOGLE_ALERT_RSS_URL_3</div>
+      <div class="ph-what">Your RSS URL for Alert 3 (NRR Pain)</div>
+      <div class="ph-files">wf1_signal_collector.json only</div>
+    </div>
+  </div>
+  <div class="ph-row">
+    <div>
+      <div class="ph-token">REPLACE_WITH_GOOGLE_ALERT_RSS_URL_4</div>
+      <div class="ph-what">Your RSS URL for Alert 4 (Leadership Hires)</div>
+      <div class="ph-files">wf1_signal_collector.json only</div>
+    </div>
+  </div>
+  <div class="ph-row">
+    <div>
+      <div class="ph-token">REPLACE_WITH_GOOGLE_ALERT_RSS_URL_5</div>
+      <div class="ph-what">Your RSS URL for Alert 5 (Earnings/Churn)</div>
+      <div class="ph-files">wf1_signal_collector.json only</div>
+    </div>
+  </div>
+
+  <div class="ph-row">
+    <div>
+      <div class="ph-token">REPLACE_WITH_YOUR_CLAY_WEBHOOK_URL</div>
+      <div class="ph-what">From Clay: Settings → Integrations → Webhook → copy the inbound URL</div>
+      <div class="ph-files">wf3_cluster_detector.json only</div>
+    </div>
+  </div>
+
+  <div class="ph-row">
+    <div>
+      <div class="ph-token">REPLACE_WITH_WF5_WEBHOOK_URL</div>
+      <div class="ph-what">The webhook URL from WF5 — you get this AFTER importing WF5 (see Step 5 below)</div>
+      <div class="ph-files">wf4_ai_scorer.json only</div>
+    </div>
+  </div>
+
+  <div class="ph-row">
+    <div>
+      <div class="ph-token">REPLACE_WITH_YOUR_EMAIL_ADDRESS</div>
+      <div class="ph-what">Your email address for the reply-to field (e.g. you@yourcompany.com)</div>
+      <div class="ph-files">wf6_approval_monitor.json only</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── STEP 5: N8N CREDENTIALS ────────────────────────────── -->
+<h1>Step 5 — Set Up n8n Credentials (15 minutes, done once)</h1>
+
+<p>In n8n, click the person icon top-right → <strong>Credentials</strong> → <strong>Add Credential</strong>. Create all 5 below before importing the workflows.</p>
+
+<table>
+  <tr><th>#</th><th>CREDENTIAL NAME (use exactly)</th><th>TYPE TO SEARCH IN N8N</th><th>WHAT TO ENTER</th></tr>
+  <tr>
+    <td>1</td>
+    <td><code>OpenRouter</code></td>
+    <td>HTTP Header Auth</td>
+    <td>Header Name: <code>Authorization</code> · Value: <code>Bearer [your OpenRouter key]</code></td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td><code>Apify</code></td>
+    <td>HTTP Header Auth</td>
+    <td>Header Name: <code>Authorization</code> · Value: <code>Bearer [your Apify token]</code></td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td><code>Google Sheets - QuadSci</code></td>
+    <td>Google Sheets OAuth2</td>
+    <td>Click "Sign in with Google" → choose your account → Allow all permissions</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td><code>Gmail - QuadSci Outbound</code></td>
+    <td>Gmail OAuth2</td>
+    <td>Click "Sign in with Google" → same account → Allow</td>
+  </tr>
+</table>
+
+<div class="callout callout-purple">
+  💡 <strong>The credential names matter.</strong> Use them exactly as written above. When you import the workflow files, n8n will try to match by name. If the names match, credentials connect automatically.
+</div>
+
+<!-- ── STEP 6: IMPORT ──────────────────────────────────────── -->
+<h1>Step 6 — Import All 6 Workflows into n8n (15 minutes)</h1>
+
+<div class="callout callout-amber">
+  ⚠️ <strong>Import order matters.</strong> Import WF5 first so you have its webhook URL ready to paste into WF4.
+</div>
+
+<div class="step-card">
+  <div class="step-head"><div class="step-num">A</div><div class="step-title">How to import a workflow JSON file</div></div>
+  <div class="step-body">
+    <ol>
+      <li>In n8n, click the <strong>+</strong> button (or "New Workflow")</li>
+      <li>Click the three-dot menu (⋮) in the top-right of the canvas</li>
+      <li>Select <strong>Import from File</strong></li>
+      <li>Choose the <code>.json</code> file from this folder</li>
+      <li>The workflow appears on canvas — n8n will prompt you to reconnect any credentials it couldn't auto-match</li>
+      <li>Click Save (Ctrl+S)</li>
+    </ol>
+  </div>
+</div>
+
+<div class="step-card">
+  <div class="step-head"><div class="step-num">B</div><div class="step-title">Import WF5 first — then copy its webhook URL</div></div>
+  <div class="step-body">
+    <ol>
+      <li>Import <code>wf5_copy_generator.json</code></li>
+      <li>Click the <strong>Webhook — Generate Email</strong> node</li>
+      <li>Copy the <strong>Webhook URL</strong> shown in the node panel (it starts with your n8n URL)</li>
+      <li>Open <code>wf4_ai_scorer.json</code> in Notepad</li>
+      <li>Find <code>REPLACE_WITH_WF5_WEBHOOK_URL</code> and replace it with the URL you just copied</li>
+      <li>Save the file</li>
+    </ol>
+    <div class="callout callout-green">✅ Now import WF4, then WF1, WF2, WF3, WF6 in any order.</div>
+  </div>
+</div>
+
+<div class="step-card">
+  <div class="step-head"><div class="step-num">C</div><div class="step-title">After importing WF4 — register its webhook URL in Clay</div></div>
+  <div class="step-body">
+    <ol>
+      <li>Import <code>wf4_ai_scorer.json</code></li>
+      <li>Click the <strong>Webhook — Clay Enrichment Done</strong> node</li>
+      <li>Copy its webhook URL</li>
+      <li>Go to Clay → Settings → Integrations → On Completion Webhook → paste the URL → Save</li>
+    </ol>
+    <p>This tells Clay: "When you finish enriching a company, ping this URL." WF4 then wakes up and scores it.</p>
+  </div>
+</div>
+
+<!-- ── STEP 7: CLAY SETUP ──────────────────────────────────── -->
+<h1>Step 7 — Set Up Your Clay Table (15 minutes)</h1>
+
+<div class="step-card">
+  <div class="step-head"><div class="step-num">7</div><div class="step-title">Build the Clay enrichment table</div></div>
+  <div class="step-body">
+    <ol>
+      <li>Log in to clay.com → click <strong>+ New Table</strong></li>
+      <li>Name it: <strong>QuadSci Account Enrichment</strong></li>
+      <li>Add these columns (Clay suggests enrichment sources automatically when you name them):
+        <em>Company Domain, Company Name, Employee Count, Funding Stage, Estimated ARR, Tech Stack, CS Headcount, Buyer Name, Buyer Title, Buyer Email, Email Verified</em>
+      </li>
+      <li>For each column, click the header → choose an enrichment source (Clearbit, LinkedIn, etc.)</li>
+      <li>Go to Settings → Integrations → <strong>Inbound Webhook</strong> → copy the webhook URL</li>
+      <li>Open <code>wf3_cluster_detector.json</code> in Notepad → replace <code>REPLACE_WITH_YOUR_CLAY_WEBHOOK_URL</code> with this URL → save</li>
+    </ol>
+    <div class="callout callout-purple">
+      💡 The inbound webhook is what <em>WF3</em> sends to. When WF3 detects a cluster, it POSTs the company domain to Clay, which then automatically enriches it and (when done) calls WF4's webhook.
+    </div>
+  </div>
+</div>
+
+<!-- ── STEP 8: APOLLO ──────────────────────────────────────── -->
+<h1>Step 8 — Create Apollo Sequences for Tier 2 (20 minutes, one-time)</h1>
+
+<p>Apollo handles follow-up for Tier 2 accounts (score 60–79). Create 2 sequences in Apollo's web UI. Once created, you manually add contacts after their first email is sent.</p>
+
+<div class="step-card">
+  <div class="step-head"><div class="step-num">8A</div><div class="step-title">Sequence 1 — QuadSci Tier 2: VP CS</div></div>
+  <div class="step-body">
+    <ol>
+      <li>Log in to apollo.io → <strong>Sequences</strong> → <strong>+ New Sequence</strong></li>
+      <li>Name: <strong>QuadSci Tier 2 — VP CS</strong></li>
+      <li><strong>Step 1</strong> — Email, send immediately (subject/body left blank — you fill in the AI draft when adding a contact)</li>
+      <li><strong>Step 2</strong> — Email, 3 days later:<br>
+        Subject: <em>Re: [company] renewal visibility</em><br>
+        Body: "Following up — curious if the renewal forecasting challenge I mentioned resonated. Happy to show you 15 minutes of how QuadSci uses telemetry signals to predict this 12 months out."
+      </li>
+      <li><strong>Step 3</strong> — Email, 7 days after Step 2:<br>
+        Body: "Last note from me — if the timing isn't right, no issue at all. If renewal visibility comes back as a priority, I'd value 20 minutes."
+      </li>
+      <li>Click Save</li>
+    </ol>
+  </div>
+</div>
+
+<div class="step-card">
+  <div class="step-head"><div class="step-num">8B</div><div class="step-title">Sequence 2 — QuadSci Tier 2: VP RevOps</div></div>
+  <div class="step-body">
+    <p>Same 3-step structure, but named <strong>QuadSci Tier 2 — VP RevOps</strong>. Change Step 2 body to:<br>
+    "Following up — if the forecasting accuracy gap I mentioned is something RevOps owns, I'd value 15 minutes to show you what telemetry-based prediction looks like vs. CRM-based."</p>
+  </div>
+</div>
+
+<!-- ── STEP 9: TEST ────────────────────────────────────────── -->
+<h1>Step 9 — Test End-to-End Before Going Live (20 minutes)</h1>
+
+<div class="step-card">
+  <div class="step-head"><div class="step-num">9</div><div class="step-title">Inject a fake signal and watch it flow through every stage</div></div>
+  <div class="step-body">
+    <p>Before activating the schedules, do a manual test run with fake data.</p>
+    <ol>
+      <li>Open your <strong>Signal Log</strong> tab → add 3 rows with the same company domain, different signal types, dates within the last 21 days</li>
+      <li>Go to n8n → open <strong>WF3 Cluster Detector</strong> → click <strong>Execute Workflow</strong></li>
+      <li>Check your <strong>Scored Accounts</strong> tab — the fake company should appear with status "Pending Enrichment"</li>
+      <li>Manually fill in the enrichment columns for that row (fake values like 500 employees, Series B, etc.)</li>
+      <li>Then open <strong>WF4 AI Scorer</strong> → click Execute → check that scores appear in Scored Accounts</li>
+      <li>If tier is Tier 1 or Tier 2, check your <strong>Review Queue</strong> tab — an email draft should appear within 30 seconds</li>
+      <li>Type <strong>APPROVE</strong> in the "Your Action" column</li>
+      <li>Go to <strong>WF6 Approval Monitor</strong> → click Execute → check that Gmail sends the email and "Send Date" fills in</li>
+    </ol>
+    <div class="callout callout-green">✅ If all 7 steps work, your pipeline is fully functional. Proceed to Step 10.</div>
+  </div>
+</div>
+
+<!-- ── STEP 10: ACTIVATE ───────────────────────────────────── -->
+<h1>Step 10 — Activate All Workflows and Go Live</h1>
+
+<p>In n8n, open each workflow and toggle the <strong>Active</strong> switch (top-right) to ON. Do them in this order:</p>
+
+<table>
+  <tr><th>ORDER</th><th>WORKFLOW</th><th>SCHEDULE</th><th>STATUS AFTER ACTIVATION</th></tr>
+  <tr><td>1st</td><td>WF5 Copy Generator</td><td>Always on (webhook)</td><td>Waiting for calls from WF4</td></tr>
+  <tr><td>2nd</td><td>WF4 AI Scorer</td><td>Always on (webhook)</td><td>Waiting for Clay to call it</td></tr>
+  <tr><td>3rd</td><td>WF3 Cluster Detector</td><td>Every 6 hours</td><td>First run in up to 6 hours</td></tr>
+  <tr><td>4th</td><td>WF6 Approval Monitor</td><td>Every 15 minutes</td><td>First run within 15 minutes</td></tr>
+  <tr><td>5th</td><td>WF1 Signal Collector</td><td>Daily 7am</td><td>First signals tomorrow morning</td></tr>
+  <tr><td>6th</td><td>WF2 Apify Scraper</td><td>Monday 9am</td><td>First LinkedIn scrape next Monday</td></tr>
+</table>
+
+<div class="callout callout-green">
+  🎉 <strong>You're live.</strong> The system runs on its own from here. Your only daily job: open the Review Queue tab each morning, read the email drafts, and type APPROVE or REJECT. Everything else is automatic.
+</div>
+
+<!-- ── DAILY ROUTINE ───────────────────────────────────────── -->
+<h1>Your Daily Routine (20–30 min/day)</h1>
+
+<table>
+  <tr><th>TIME</th><th>WHAT TO DO</th><th>WHERE</th></tr>
+  <tr><td>Morning</td><td>Open Review Queue tab. For each new row: read the email draft, type APPROVE (or REJECT or EDIT).</td><td>Google Sheets → Review Queue tab</td></tr>
+  <tr><td>After approving</td><td>For Tier 2 accounts: go to Apollo, find the contact, add them to the right sequence.</td><td>Apollo.io web UI</td></tr>
+  <tr><td>When you get replies</td><td>Fill in "Reply Date" and "Outcome" columns manually.</td><td>Google Sheets → Review Queue tab</td></tr>
+</table>
+
+<!-- ── TROUBLESHOOTING ─────────────────────────────────────── -->
+<h1>Quick Troubleshooting</h1>
+
+<table>
+  <tr><th>SYMPTOM</th><th>LIKELY CAUSE</th><th>FIX</th></tr>
+  <tr><td>Signal Log is empty after WF1 runs</td><td>Google Alerts RSS URLs haven't been replaced</td><td>Open wf1 in n8n, click each HTTP node, check the URL field</td></tr>
+  <tr><td>WF3 runs but nothing goes to Scored Accounts</td><td>Signal Log rows have no Company Domain</td><td>Manually fill in a few Company Domain values in Signal Log to test</td></tr>
+  <tr><td>Clay doesn't enrich — WF4 never fires</td><td>Clay webhook not connected to WF4</td><td>Re-check Clay → Settings → On Completion Webhook URL matches WF4 webhook URL exactly</td></tr>
+  <tr><td>WF4 fires but score is 0 / tier is Discard</td><td>OpenRouter model returned malformed JSON</td><td>Open WF4 → view execution → check "Code — Parse Score Result" output. Try re-running once.</td></tr>
+  <tr><td>Gmail sends but buyer gets empty email</td><td>Generated Email column has Subject line but body parsing failed</td><td>Manually check the email in Review Queue — if body looks right, the issue is in WF6 Code node. Open it and check.</td></tr>
+</table>
+
+<div style="margin-top: 48px; padding: 20px 24px; background: var(--dark); border-radius: 10px; color: #C4B5FD; font-size: 13px;">
+  <strong style="color: #EDE9FE;">Questions or something broken?</strong> Open the relevant workflow in n8n, run it manually with the Execute button, and click any node to see exactly what data went in and what came out. This is the fastest way to debug — n8n shows you the full data at every step.
+</div>
+
+</div>
+</body>
+</html>

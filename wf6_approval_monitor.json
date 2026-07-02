@@ -1,0 +1,821 @@
+{
+  "name": "WF6 — Approval Queue Monitor (Every 15 min)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "c154cb44-acc9-449c-b990-be1669e69e39",
+      "name": "Schedule Trigger — Every 15 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -960,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1264306495,
+          "mode": "list",
+          "cachedResultName": "Review Queue",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk/edit#gid=1264306495"
+        },
+        "options": {}
+      },
+      "id": "1eeae549-36f6-45a1-947a-5052133ba087",
+      "name": "Sheets — Read Approved Rows",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -720,
+        112
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "mCitxoRY2r1cdcjh",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Authoritative approval gate. Both conditions required:\n// 1. 'Your Action' must be exactly 'APPROVE' (case-insensitive, trimmed)\n// 2. 'Send Date' must be empty — row has not already been sent\n//\n// Why this is enforced in code and not only in the upstream Sheets filter:\n// The Google Sheets getRows filter is a best-effort pre-filter. It can behave\n// inconsistently with casing, trailing spaces, or partially filled cells.\n// This node is the contract-enforcing gate — no email leaves without passing both.\n// 'EDIT', 'REJECT', 'SKIP', blank, or any other value is rejected here.\n\nconst rows = $input.all();\nconst eligible = rows.filter(row => {\n  const action   = (row.json['Your Action'] || '').toString().trim().toUpperCase();\n  const sendDate = (row.json['Send Date']   || '').toString().trim();\n  return action === 'APPROVE' && sendDate === '';\n});\n\nif (eligible.length === 0) {\n  return [{ json: { __nothing_to_send: true } }];\n}\n\nreturn eligible;"
+      },
+      "id": "78ec54d8-bf1f-4fc9-9785-b2f0a06428f5",
+      "name": "Code — Filter Unsent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "check-unsent",
+              "leftValue": "={{ $json.__nothing_to_send }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          }
+        },
+        "options": {}
+      },
+      "id": "61a60c09-0f33-4118-815e-839fdae88c95",
+      "name": "IF — Emails to Send?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Parse the Generated Email field into subject + body, then append the QuadSci signature.\n// The AI writes: \"Subject: [subject]\\n\\n[body]\" with no sign-off (the prompt forbids it).\n// If the user put an edited version in 'Your Notes', use that instead.\n\nconst row = $input.item.json;\nconst rawEmail = (row['Your Notes'] && row['Your Notes'].trim())\n  ? row['Your Notes'].trim()\n  : (row['Generated Email'] || '').trim();\n\nconst lines  = rawEmail.split('\\n');\nlet subject  = '';\nlet bodyLines = [];\n\nif (lines[0].toLowerCase().startsWith('subject:')) {\n  subject   = lines[0].replace(/^subject:\\s*/i, '').trim();\n  bodyLines = lines.slice(2); // skip subject line + blank line\n} else {\n  subject   = `Re: renewal visibility for ${row['Company Name'] || 'your account'}`;\n  bodyLines = lines;\n}\n\n// QuadSci signature — appended deterministically so the AI cannot mangle the name or title.\n// Change this constant if the sender, name, or title changes.\nconst SIGNATURE = '\\n\\nBest,\\nPrasun M.\\nHead of GTM at QuadSci';\n\nconst body = bodyLines.join('\\n').trim() + SIGNATURE;\n\nreturn {\n  json: {\n    ...row,\n    parsed_subject: subject,\n    parsed_body: body\n  }\n};"
+      },
+      "id": "37986dc7-cb2c-4aa9-a928-35f4da40bae2",
+      "name": "Code — Parse Subject + Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "pmukhopadhyay5537@gmail.com",
+        "subject": "={{ '[DEMO — ' + ($json['Company Name'] || $json['Company Domain'] || 'Unknown') + '] ' + $json.parsed_subject }}",
+        "emailType": "text",
+        "message": "={{ $json.parsed_body }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "pmukhopadhyay5537@gmail.com"
+        }
+      },
+      "id": "ae9ea48d-0046-42b3-bd98-b446ddbd05eb",
+      "name": "Gmail — Send Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        0
+      ],
+      "webhookId": "08b4ef2f-069d-4e6f-a069-c0a5bc29b4a4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NpTK9WNwWNaoCl3c",
+          "name": "Gmail account"
+        }
+      },
+      "notes": "DEMO MODE OVERRIDE: sendTo is hardcoded to the project owner's inbox. The real buyer email ($json['Buyer Email']) is intentionally NOT used. Every email generated during testing routes to pmukhopadhyay5537@gmail.com regardless of which account was scored. Subject is prefixed with [DEMO — CompanyName] so each email is identifiable in the inbox. Remove this override and restore sendTo to ={{ $json['Buyer Email'] }} before any production use."
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Review Queue",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Company Domain": "={{ $('Code — Parse Subject + Body').item.json['Company Domain'] }}",
+            "Send Date": "={{ $now.toISODate() }}",
+            "row_number": 0
+          },
+          "matchingColumns": [
+            "Company Domain"
+          ],
+          "schema": [
+            {
+              "id": "Date Added",
+              "displayName": "Date Added",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Buyer Name",
+              "displayName": "Buyer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Buyer Title",
+              "displayName": "Buyer Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Buyer Email",
+              "displayName": "Buyer Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tier",
+              "displayName": "Tier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total Score",
+              "displayName": "Total Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Signal Summary",
+              "displayName": "Signal Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Generated Email",
+              "displayName": "Generated Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Your Action",
+              "displayName": "Your Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Your Notes",
+              "displayName": "Your Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Send Date",
+              "displayName": "Send Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reply Date",
+              "displayName": "Reply Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Outcome",
+              "displayName": "Outcome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "threadId",
+              "displayName": "threadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "labelIds",
+              "displayName": "labelIds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company Domain",
+              "displayName": "Company Domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "427ce679-5758-4ab4-b112-50fd8f7abffb",
+      "name": "Sheets — Mark as Sent",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        480,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "mCitxoRY2r1cdcjh",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1_hKjUHNR_h27QrITATMeFLgHaEvzbWnRiP3qSF-jCyk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Scored Accounts",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Company Domain": "={{ $('Code — Parse Subject + Body').item.json['Company Domain'] }}",
+            "Status": "=Sent",
+            "row_number": 0
+          },
+          "matchingColumns": [
+            "Company Domain"
+          ],
+          "schema": [
+            {
+              "id": "Date Flagged",
+              "displayName": "Date Flagged",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company Domain",
+              "displayName": "Company Domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Signal Count",
+              "displayName": "Signal Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Signal Types",
+              "displayName": "Signal Types",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Signal Summaries",
+              "displayName": "Signal Summaries",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Employee Count",
+              "displayName": "Employee Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Funding Stage",
+              "displayName": "Funding Stage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Estimated ARR",
+              "displayName": "Estimated ARR",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tech Stack",
+              "displayName": "Tech Stack",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CS Headcount",
+              "displayName": "CS Headcount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Firmographic Score",
+              "displayName": "Firmographic Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Signal Score",
+              "displayName": "Signal Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tech Score",
+              "displayName": "Tech Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total Score",
+              "displayName": "Total Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tier",
+              "displayName": "Tier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Buyer Name",
+              "displayName": "Buyer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Buyer Title",
+              "displayName": "Buyer Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Buyer Email",
+              "displayName": "Buyer Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email Verified",
+              "displayName": "Email Verified",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date Added",
+              "displayName": "Date Added",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Signal Summary",
+              "displayName": "Signal Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Generated Email",
+              "displayName": "Generated Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Your Action",
+              "displayName": "Your Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Your Notes",
+              "displayName": "Your Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Send Date",
+              "displayName": "Send Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reply Date",
+              "displayName": "Reply Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Outcome",
+              "displayName": "Outcome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "a810f251-5c52-4954-89b4-c8b86141887d",
+      "name": "Sheets — Update Scored Accounts to Sent",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        720,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "mCitxoRY2r1cdcjh",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger — Every 15 min": {
+      "main": [
+        [
+          {
+            "node": "Sheets — Read Approved Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets — Read Approved Rows": {
+      "main": [
+        [
+          {
+            "node": "Code — Filter Unsent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Filter Unsent": {
+      "main": [
+        [
+          {
+            "node": "IF — Emails to Send?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Emails to Send?": {
+      "main": [
+        [
+          {
+            "node": "Code — Parse Subject + Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Parse Subject + Body": {
+      "main": [
+        [
+          {
+            "node": "Gmail — Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail — Send Email": {
+      "main": [
+        [
+          {
+            "node": "Sheets — Mark as Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets — Mark as Sent": {
+      "main": [
+        [
+          {
+            "node": "Sheets — Update Scored Accounts to Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2bc97f34-73f3-4ca8-91e6-32bbf9fffb6d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2937f53cf7d4f752601b86a3c3b2ce9edd949a058b20d977b6b8328c69cff778"
+  },
+  "id": "tJMKWgqD7wUbI2g2",
+  "tags": [
+    {
+      "updatedAt": "2026-05-25T23:16:57.705Z",
+      "createdAt": "2026-05-25T23:16:57.705Z",
+      "id": "lRKTKUtOG1wLcOi4",
+      "name": "quadsci"
+    }
+  ]
+}
